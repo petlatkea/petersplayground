@@ -203,8 +203,8 @@ function buildLevel( level ) {
                 case 23:    // blue door
                     tileId = "bluedoor";
                     // start player position here:
-                    player.x = x*64+32 + player.w/2;
-                    player.y = y*64+16 + player.h/2;
+                    player.x = x*64+38 + player.w/2;
+                    player.y = y*64+17 + player.h/2;
                     break;
                 case 33:
                     tileId = "reddoor";
