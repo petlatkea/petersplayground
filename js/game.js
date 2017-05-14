@@ -232,8 +232,16 @@ function getTileAt( x, y ) {
     return game.map[y][x];
 }
 
-function canWalkOnTile( tile ) {
+function canWalkOnTile( xpos, ypos ) {
     let canwalk = true;
+
+    let gridx = Math.floor(xpos/64);
+    let gridy = Math.floor(ypos/64);
+
+    let tile = game.map[gridy][gridx];
+    let tileX = xpos - gridx * 64;
+    let tileY = ypos - gridy * 64;
+
 
     switch( tile ) {
             // plain floor
@@ -251,6 +259,7 @@ function canWalkOnTile( tile ) {
             break;
             // doors - only partly walkable (requires relative x and y pos)
         case 23:
+
         case 24:
         case 25:
         case 26:
@@ -261,11 +270,37 @@ function canWalkOnTile( tile ) {
         case 35:
         case 36:
         case 37:
+            canwalk = tileY>16 && tileY<48;
+            break;
+        // partly blocked
+        case 43: // 24 top left
+            canwalk = tileX>24 && tileY>24;
+            break;
+        case 44:
+            canwalk = tileX<40 && tileY>24;
+            break;
+        case 45: // 24X 32Y
+            canwalk = tileX<25 && tileY>32 || tileX>24;
+            break;
+        case 46:
+            canwalk = tileX<40 || tileY>32;
+            break;
+        case 47:
+            canwalk = tileY>24;
+            break;
+        case 48:
+        case 53:
+        case 54:
+        case 55:
+        case 56:
+        case 57:
+        case 58:
             canwalk = true;
             break;
+
         default:
             canwalk = false;
-                 }
+    }
 
     return canwalk;
 }
@@ -282,10 +317,9 @@ function canMoveTo( object, xpos, ypos ) {
     let right = xpos+object.w/2;
 
     // find tile at x, y
-
-    // TODO: add Relative x and y for tiles that can be partly walked on
-    validposition = canWalkOnTile( getTileAt(left, top) ) && canWalkOnTile( getTileAt(left, bot) ) &&
-        canWalkOnTile( getTileAt(right, top) ) && canWalkOnTile( getTileAt(right, bot) );
+    // add Relative x and y for tiles that can be partly walked on
+    validposition = canWalkOnTile(left, top) && canWalkOnTile(left, bot) &&
+                    canWalkOnTile(right, top) && canWalkOnTile(right, bot);
 
     return validposition;
 }
