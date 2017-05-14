@@ -26,6 +26,7 @@ function createPreloader() {
 
     game.q.loadManifest([
         {id:"tiles", src: "tiles-01.png"},
+        {id:"sprites", src: "sprites-01.png"},
         {id:"levels", src: "levels.json"}
     ]);
 
@@ -56,8 +57,16 @@ function gameLoaded() {
     });
 
 
-    // TODO: prepare sprites
-
+    // prepare sprites
+    game.sprites = new createjs.SpriteSheet( {
+        "images": [game.q.getResult("sprites")],
+        "frames": {"width":32, "height":32, "regX": 0, "regY":0},
+        "animations": {
+            "p_stopped": [0],
+            "p_move": [0,2]
+        },
+        "framerate": 5
+    });
 
 
     initGame();
@@ -69,6 +78,8 @@ function initGame() {
     window.addEventListener("keyup", keyReleased);
 
     game.level = 0;
+
+    createPlayer();
 
     startGame();
 }
@@ -122,12 +133,16 @@ function createStage() {
     createjs.Ticker.on("tick", ticker);
 }
 
+function createPlayer() {
+    game.player = new createjs.Sprite(game.sprites, "p_stopped");
 
+}
 
 function startGame() {
 
     buildLevel( game.level );
 
+    game.stage.addChild(game.player);
 }
 
 
@@ -148,6 +163,9 @@ function buildLevel( level ) {
                     break;
                 case 23:    // blue door
                     tileId = "bluedoor";
+                    // start player position here:
+                    game.player.x = x*64+32;
+                    game.player.y = y*64+16;
                     break;
                 case 33:
                     tileId = "reddoor";
@@ -171,7 +189,21 @@ function buildLevel( level ) {
 
 function ticker( event ) {
 
+    // move player
+    if( keys.left ) {
+        game.player.x--;
+    } else if( keys.right ) {
+        game.player.x++;
+    }
+
+    if( keys.up ) {
+        game.player.y--;
+    } else if( keys.down ) {
+        game.player.y++;
+    }
+
+
+
     // update stage
     game.stage.update( event );
 }
-
