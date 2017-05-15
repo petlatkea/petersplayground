@@ -7,6 +7,7 @@ var game = {
 };
 
 var player = null;
+var enemies = null;
 
 function pageLoaded() {
     createStage();
@@ -65,7 +66,9 @@ function gameLoaded() {
         "frames": {"width":32, "height":32, "regX": 16, "regY":16},
         "animations": {
             "p_stopped": [0],
-            "p_move": [0,2]
+            "p_move": [0,2],
+            "guard": [10],
+            "hunter": [20]
         },
         "framerate": 5
     });
@@ -147,6 +150,10 @@ var Player = {
 
     },
 
+    hitBy( opponene ) {
+      console.log("Auch, I'm hit");
+    },
+
     moveDown() {
         this.turn("down");
         this.move(0,player.speed);
@@ -201,15 +208,47 @@ var Player = {
 
 }
 
+
+
+class Enemy extends createjs.Sprite {
+    constructor( spritename ) {
+        super(game.sprites, spritename);
+        this.w = 16;
+        this.h = 24;
+        this.speed = 1;
+    }
+
+    move() {
+        if(!this.moveTo( this.speed, 0 ) ) {
+            this.speed = -this.speed;
+        }
+    }
+
+    moveTo( xoffset, yoffset ) {
+        if( canMoveTo(this, this.x+xoffset, this.y+yoffset) ) {
+            this.x += xoffset;
+            this.y += yoffset;
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+
+
+
 function createPlayer() {
     player = new createjs.Sprite(game.sprites, "p_stopped");
 
     Object.assign(player, Player);
 }
 
-function startGame() {
 
+
+function startGame() {
     buildLevel( game.level );
+
+    createEnemies( game.level );
 
     game.stage.addChild( player);
 }
@@ -260,6 +299,31 @@ function buildLevel( level ) {
         }
     }
 }
+
+function createEnemies( level ) {
+    let enemylist = game.levels[level].enemies;
+
+    enemies = [];
+
+    for( let e=0; e < enemylist.length; e++ ) {
+        var enemy = createEnemy(enemylist[e]);
+        game.stage.addChild(enemy);
+        enemies.push( enemy );
+    }
+}
+
+function createEnemy( data ) {
+    var enemy = null;
+
+    if( data.type == "guard") {
+        enemy = new Enemy("guard");
+        enemy.x = data.grid.x*64 + data.offset.x + enemy.w/2;
+        enemy.y = data.grid.y*64 + data.offset.y + enemy.h/2;
+    }
+
+    return enemy;
+}
+
 
 function getTileAt( x, y ) {
     x = Math.floor(x/64);
@@ -361,24 +425,50 @@ function canMoveTo( object, xpos, ypos ) {
     return validposition;
 }
 
+
+function hitTest( objA, objB ) {
+    if( objB.x-objB.regX < objA.x-objA.regX+objA.w &&
+        objB.x-objB.regX+objB.w > objA.x-objA.regX &&
+        objB.y-objB.regY+objB.h > objA.y-objA.regY &&
+        objB.y-objB.regY < objA.y-objA.regY+objA.h ) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+
 function ticker( event ) {
 
-    // move player
-    if( keys.left ) {
-        player.moveLeft();
-    } else if( keys.right ) {
-        player.moveRight();
-    } else
+    if( player ) {
+        // move player
+        if( keys.left ) {
+            player.moveLeft();
+        } else if( keys.right ) {
+            player.moveRight();
+        } else
 
-    if( keys.up ) {
-        player.moveUp();
-    } else if( keys.down ) {
-        player.moveDown();
-    } else {
-        // no movement at all
-        player.stopMoving();
+        if( keys.up ) {
+            player.moveUp();
+        } else if( keys.down ) {
+            player.moveDown();
+        } else {
+            // no movement at all
+            player.stopMoving();
+        }
     }
 
+    if( enemies ) {
+        // move enemies, and test for collisions
+        enemies.forEach( enemy => {
+            enemy.move()
+            // test collision with player
+            if( hitTest( enemy, player) ) {
+                player.hitBy( enemy );
+            }
+        });
+    }
 
 
     // update stage
