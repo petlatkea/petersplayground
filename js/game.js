@@ -52,7 +52,8 @@ function gameLoaded() {
             "floor":[1],
             "bluedoor": [23],
             "bluedoor_open": [27],
-            "reddoor": [33,37]
+            "reddoor": [33],
+            "reddoor_open": [37]
         },
         "framerate": 5
     });
@@ -140,20 +141,29 @@ var Player = {
     w: 19,
     h: 27,
     speed: 3,
+    direction: "left",
+
+    stopMoving() {
+
+    },
 
     moveDown() {
+        this.turn("down");
         this.move(0,player.speed);
     },
 
     moveUp() {
+        this.turn("up");
         this.move(0,-player.speed);
     },
 
     moveLeft() {
+        this.turn("left");
         this.move(-player.speed,0);
     },
 
     moveRight() {
+        this.turn("right");
         this.move(player.speed,0);
     },
 
@@ -162,7 +172,33 @@ var Player = {
             this.x += xoffset;
             this.y += yoffset;
         }
+    },
+
+    turn( direction ) {
+        if( this.direction != direction ) {
+            let rotation = this.rotation;
+            if( direction == "left") {
+                rotation = 180;
+            } else if(direction == "right") {
+                rotation = 0;
+            } else if(direction == "down") {
+                rotation = 90;
+            } else if(direction == "up") {
+                rotation = -90;
+            }
+
+            // fix rotation turning more than necessary
+            if( rotation-this.rotation < -180 ) {
+                rotation = 360+rotation;
+            }
+
+            createjs.Tween.get(this).to({rotation: rotation}, 200);
+
+            this.direction = direction;
+        }
     }
+
+
 }
 
 function createPlayer() {
@@ -264,7 +300,8 @@ function canWalkOnTile( xpos, ypos ) {
         case 25:
         case 26:
         case 27:
-
+            canwalk = tileY>16 && tileY<48;
+            break;
         case 33:
         case 34:
         case 35:
@@ -331,12 +368,15 @@ function ticker( event ) {
         player.moveLeft();
     } else if( keys.right ) {
         player.moveRight();
-    }
+    } else
 
     if( keys.up ) {
         player.moveUp();
     } else if( keys.down ) {
         player.moveDown();
+    } else {
+        // no movement at all
+        player.stopMoving();
     }
 
 
