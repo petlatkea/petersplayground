@@ -15,8 +15,6 @@ function pageLoaded() {
     createStage();
 
     createPreloader();
-
-
 }
 
 /* PRELOADER */
@@ -29,6 +27,8 @@ function createPreloader() {
     game.q.on("complete", gameLoaded);
 
     game.q.loadManifest([
+        "js/sprites.js",
+        "js/tiles.js",
         {id:"tiles", src: "tiles-01.png"},
         {id:"sprites", src: "sprites-01.png"},
         {id:"levels", src: "levels.json"}
@@ -53,11 +53,12 @@ function gameLoaded() {
          "animations": {
             "space":[0],
             "floor":[1],
-            "bluedoor": [23],
-            "bluedoor_open": [27],
-            "reddoor": [33],
-            "reddoor_anim": [33,37,"reddoor_open"],
-            "reddoor_open": [37]
+            "bluedoor_closed": [23],
+            "bluedoor_opened": [27],
+            "bluedoor_open": [23,27,"bluedoor_opened"],
+            "reddoor_closed": [33],
+            "reddoor_opened": [37],
+            "reddoor_open": [33,37,"reddoor_opened"]
         },
         "framerate": 5
     });
@@ -152,156 +153,9 @@ function createStage() {
     createjs.Ticker.on("tick", ticker);
 }
 
-var Player = {
-    x: 0,
-    y: 0,
-    w: 19,
-    h: 24,
-    speed: 3,
-    direction: "left",
-
-    stopMoving() {
-
-    },
-
-    hitBy( opponent ) {
-      console.log("Auch, I'm hit");
-    },
-
-    pickUp( item ) {
-        if( ! this.items ) {
-            this.items = [];
-        }
-
-        this.items.push(item);
-        item.pickedUp();
-    },
-
-    useItemOn(item, other) {
-
-        // some objects can take the item from you - if they have the appropiate method
-        if( other.useItem ) {
-            if( other.useItem(item) ) {
-                // item sticks to other
-                other.pickUp(item);
-                this.items.splice( this.items.indexOf(item), 1);
-            }
-        }
-
-    },
-
-    getItem( itemName ) {
-        if( this.items ) {
-            return this.items.find( item => item.type == itemName );
-        }
-        return undefined;
-    },
-
-    moveDown() {
-        this.turn("down");
-        this.move(0,player.speed);
-    },
-
-    moveUp() {
-        this.turn("up");
-        this.move(0,-player.speed);
-    },
-
-    moveLeft() {
-        this.turn("left");
-        this.move(-player.speed,0);
-    },
-
-    moveRight() {
-        this.turn("right");
-        this.move(player.speed,0);
-    },
-
-    move( xoffset, yoffset ) {
-        if( canMoveTo(this, this.x+xoffset, this.y+yoffset) ) {
-            this.x += xoffset;
-            this.y += yoffset;
-
-            movedTo(this, this.x, this.y);
-        }
-    },
-
-    turn( direction ) {
-        if( this.direction != direction ) {
-            let rotation = this.rotation;
-            if( direction == "left") {
-                rotation = 180;
-            } else if(direction == "right") {
-                rotation = 0;
-            } else if(direction == "down") {
-                rotation = 90;
-            } else if(direction == "up") {
-                rotation = -90;
-            }
-
-            // fix rotation turning more than necessary
-            if( rotation-this.rotation < -180 ) {
-                rotation = 360+rotation;
-            }
-
-            createjs.Tween.get(this).to({rotation: rotation}, 200);
-
-            this.direction = direction;
-        }
-    }
-
-
-}
-
-class Item extends createjs.Sprite {
-    constructor( spritename ) {
-        super(game.sprites, spritename);
-        this.type = spritename;
-    }
-
-    pickedUp() {
-        console.log("Picked up " + this.type);
-        // move outside of stage
-        createjs.Tween.get(this)
-            .to({x:game.stage.getBounds().width, y:game.stage.getBounds().height}, 1000 )
-            .call( function() { game.stage.removeChild(this) });
-    }
-
-
-}
-
-
-class Enemy extends createjs.Sprite {
-    constructor( spritename ) {
-        super(game.sprites, spritename);
-        this.w = 16;
-        this.h = 24;
-        this.speed = 1;
-    }
-
-    move() {
-        if(!this.moveTo( this.speed, 0 ) ) {
-            this.speed = -this.speed;
-        }
-    }
-
-    moveTo( xoffset, yoffset ) {
-        if( canMoveTo(this, this.x+xoffset, this.y+yoffset) ) {
-            this.x += xoffset;
-            this.y += yoffset;
-            return true;
-        } else {
-            return false;
-        }
-    }
-}
-
-
 
 function createPlayer() {
-    player = new createjs.Sprite(game.sprites, "p_stopped");
-
-    Object.assign(player, Player);
+    player = new Player("p_stopped");
 }
 
 
@@ -312,48 +166,49 @@ function startGame() {
     game.stage.addChild( player);
 }
 
+function levelCompleted() {
+    console.log("LEVEL COMPLETED");
+    // TODO: Goto next level
+}
+
 function buildLevel( level ) {
     createTiles( level );
     createEnemies( level );
     createItems( level );
+
+    setPlayerStart( level );
+}
+
+function setPlayerStart( level ) {
+    // For now, position the player at the first Entry found in the map
+    // TODO: Look for an entry-object in the tiles instead
+    let map = game.levels[level].map
+    for( let y=0; y < map.length; y++) {
+        for( let x=0; x < map[y].length; x++ ) {
+            if( map[y][x] == 8 ) {
+                player.x = x*64+38 + player.w/2;
+                player.y = y*64+17 + player.h/2;
+                break;
+            }
+        }
+    }
 }
 
 function createTiles( level ) {
     tiles = [];
 
-    var map = game.levels[level].map;
+    let map = game.levels[level].map;
 
     for( let y=0; y < map.length; y++) {
         tiles[y] = [];
         for( let x=0; x < map[y].length; x++ ) {
-            var tileId = map[y][x];
 
-            switch(tileId) {
-                case 0:
-//                    tileId = "space";
-                    break;
-                case 23:    // blue door
-//                    tileId = "bluedoor";
-                    // start player position here:
-                    player.x = x*64+38 + player.w/2;
-                    player.y = y*64+17 + player.h/2;
-                    break;
-                case 33:
-//                    tileId = "reddoor";
-                    break;
-            }
+            let tile = createTile(map[y][x]);
+            tile.gridX = x;
+            tile.gridY = y;
 
-
-            // create sprite for this type of tile
-            var tile = new createjs.Sprite(game.tiles, tileId);
-
-            if( Number.isInteger(tileId) ) {
-                tile.gotoAndStop(tileId);
-            }
             tile.x = x * 64;
             tile.y = y * 64;
-
-            tile.type = tileId;
 
             tiles[y][x] = tile;
 
@@ -385,7 +240,6 @@ function createEnemy( data ) {
 
     return enemy;
 }
-
 
 function createItems( level ) {
     items = [];
@@ -424,9 +278,7 @@ function getTileAt( x, y ) {
 }
 
 
-function canWalkOnTile( xpos, ypos ) {
-    let canwalk = true;
-
+function canWalkOnTile(object, xpos, ypos ) {
     let gridx = Math.floor(xpos/64);
     let gridy = Math.floor(ypos/64);
 
@@ -434,71 +286,7 @@ function canWalkOnTile( xpos, ypos ) {
     let tileX = xpos - gridx * 64;
     let tileY = ypos - gridy * 64;
 
-
-    switch( tile.type ) {
-            // plain floor
-        case 1:
-        case 2:
-        case 3:
-        case 4:
-        case 5:
-        case 6:
-        case 7:
-        case 14:
-        case 15:
-        case 16:
-        case 17: canwalk = true;
-            break;
-            // doors - only partly walkable (requires relative x and y pos)
-        case 23:
-
-        case 24:
-        case 25:
-        case 26:
-        case 27:
-            canwalk = tileY>16 && tileY<48;
-            break;
-        case 33:
-            canwalk = tileY>16 && tileY<48 && tileX<24;
-            break;
-
-        case 34:
-        case 35:
-        case 36:
-        case 37:
-            canwalk = tileY>16 && tileY<48;
-            break;
-        // partly blocked
-        case 43: // 24 top left
-            canwalk = tileX>24 && tileY>24;
-            break;
-        case 44:
-            canwalk = tileX<40 && tileY>24;
-            break;
-        case 45: // 24X 32Y
-            canwalk = tileX<25 && tileY>32 || tileX>24;
-            break;
-        case 46:
-            canwalk = tileX<40 || tileY>32;
-            break;
-        case 47:
-            canwalk = tileY>24;
-            break;
-        case 48:
-        case 53:
-        case 54:
-        case 55:
-        case 56:
-        case 57:
-        case 58:
-            canwalk = true;
-            break;
-
-        default:
-            canwalk = false;
-    }
-
-    return canwalk;
+    return tile.canWalkOn(object,tileX,tileY)
 }
 
 /* return if the given position is valid for the object */
@@ -514,15 +302,14 @@ function canMoveTo( object, xpos, ypos ) {
 
     // find tile at x, y
     // add Relative x and y for tiles that can be partly walked on
-    validposition = canWalkOnTile(left, top) && canWalkOnTile(left, bot) &&
-                    canWalkOnTile(right, top) && canWalkOnTile(right, bot);
+    validposition = canWalkOnTile(object,left, top) && canWalkOnTile(object,left, bot) &&
+                    canWalkOnTile(object,right, top) && canWalkOnTile(object,right, bot);
 
     return validposition;
 }
 
 /* called after an object has been moved - takes care of what happens then */
 function movedTo(object, xpos, ypos) {
-
     let top = ypos-object.h/2;
     let left = xpos-object.w/2;
     let bot = ypos+object.h/2;
@@ -542,22 +329,7 @@ function walkOnTile(object,xpos,ypos) {
     let tileX = xpos - gridx * 64;
     let tileY = ypos - gridy * 64;
 
-    switch( tile.type ) {
-        case 33: // red door
-            // unlock if object has a key
-            let key = object.getItem("key");
-            if( key ) {
-                object.useItemOn(key, tile);
-                console.log("Opened door with key");
-                // replace sprite
-                tile.gotoAndPlay("reddoor_anim");
-                tile.type = 37;
-            } else {
-                console.log("Need a key to open door");
-            }
-
-    }
-
+    tile.walkOn(object, tileX, tileY);
 }
 
 function hitTest( objA, objB ) {
