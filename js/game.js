@@ -1,6 +1,7 @@
 window.addEventListener('load', pageLoaded);
 
 var game = {
+    playing: false,
     running: false,
     stage: null,
     q: null
@@ -164,11 +165,17 @@ function startGame() {
     buildLevel( game.level );
 
     game.stage.addChild( player);
+    game.playing = true;
 }
 
 function levelCompleted() {
     console.log("LEVEL COMPLETED");
+    game.playing = false;
     // TODO: Goto next level
+    game.level++;
+    game.stage.removeAllChildren();
+
+    startGame();
 }
 
 function buildLevel( level ) {
@@ -222,11 +229,13 @@ function createEnemies( level ) {
 
     enemies = [];
 
-    enemylist.forEach( data => {
-        let enemy = createEnemy(data);
-        game.stage.addChild(enemy);
-        enemies.push( enemy );
-    });
+    if( enemylist ) {
+        enemylist.forEach( data => {
+            let enemy = createEnemy(data);
+            game.stage.addChild(enemy);
+            enemies.push( enemy );
+        });
+    }
 }
 
 function createEnemy( data ) {
@@ -245,24 +254,26 @@ function createItems( level ) {
     items = [];
 
     let itemlist = game.levels[level].items;
-    itemlist.forEach( data => {
-        var item = null;
+    if( itemlist ) {
+        itemlist.forEach( data => {
+            var item = null;
 
-        switch( data.type ) {
-            case "key":
-                item = new Item("key");
-                item.h = 15;
-                item.w = 17;
-                break;
-                          }
+            switch( data.type ) {
+                case "key":
+                    item = new Item("key");
+                    item.h = 15;
+                    item.w = 17;
+                    break;
+                              }
 
-        item.x = data.grid.x*64 + data.offset.x + item.w/2;
-        item.y = data.grid.y*64 + data.offset.y + item.h/2;
+            item.x = data.grid.x*64 + data.offset.x + item.w/2;
+            item.y = data.grid.y*64 + data.offset.y + item.h/2;
 
-        game.stage.addChild( item );
-        items.push(item);
+            game.stage.addChild( item );
+            items.push(item);
 
-    } )
+        } );
+    }
 }
 
 
@@ -329,7 +340,9 @@ function walkOnTile(object,xpos,ypos) {
     let tileX = xpos - gridx * 64;
     let tileY = ypos - gridy * 64;
 
-    tile.walkOn(object, tileX, tileY);
+    if( tile ) {
+        tile.walkOn(object, tileX, tileY);
+    }
 }
 
 function hitTest( objA, objB ) {
@@ -346,6 +359,10 @@ function hitTest( objA, objB ) {
 
 
 function ticker( event ) {
+
+    if( game.playing ) {
+
+
 
     if( player ) {
         // move player
@@ -385,6 +402,7 @@ function ticker( event ) {
         })
     }
 
+    }
 
     // update stage
     game.stage.update( event );

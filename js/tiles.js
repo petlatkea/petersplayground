@@ -69,11 +69,16 @@ function createTile(type) {
         case 47:
             tile = new P24Top(type);
             break;
+        case 53:
+            tile = new P24BottomLeftCorner(type);
+            break;
+        case 54:
+            tile = new P24BottomRightCorner(type);
+            break;
 
         // TODO: Implement the rest
         case 48:
-        case 53:
-        case 54:
+
         case 55:
         case 56:
         case 57:
@@ -139,6 +144,7 @@ class Entry extends Tile {
 class Exit extends Tile {
     constructor( type ) {
         super(type);
+        this.triggered = false;
     }
 
      canWalkOn(object,xoffset,yoffset) {
@@ -152,7 +158,8 @@ class Exit extends Tile {
     }
 
     walkOn(object,xoffset,yoffset) {
-        if( object == player && xoffset>12 && xoffset<64-8-12 && yoffset>16 && yoffset<64-16 ) {
+        if( !this.triggered && object == player && xoffset>24 && xoffset<64-8-24 && yoffset>24 && yoffset<64-24 ) {
+            this.triggered = true;
             levelCompleted();
         }
     }
@@ -231,11 +238,24 @@ class P24TopLeftCorner extends Tile {
     }
 }
 
+class P24BottomLeftCorner extends Tile {
+    canWalkOn(object,xoffset,yoffset) {
+        return xoffset>24 && yoffset<64-24;
+    }
+}
+
 class P24TopRightCorner extends Tile {
     canWalkOn(object,xoffset,yoffset) {
         return xoffset<40 && yoffset>24;
     }
 }
+
+class P24BottomRightCorner extends Tile {
+    canWalkOn(object,xoffset,yoffset) {
+        return xoffset<40 && yoffset<64-24;
+    }
+}
+
 
 class P24TopLeft extends Tile {
     canWalkOn(object,xoffset,yoffset) {
