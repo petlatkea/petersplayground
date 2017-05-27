@@ -75,6 +75,7 @@ function gameLoaded() {
             "guard": [10],
             "hunter": [20],
             "patroller": [30],
+            "chaser": [21],
             "key": [11]
         },
         "framerate": 10
@@ -256,6 +257,11 @@ function createEnemy( data ) {
             enemy = new Patroller( data.pattern );
             enemy.offset = data.offset;
             enemy.setPosition(0);
+            break;
+        case "chaser":
+            enemy = new Chaser();
+            enemy.offset = data.offset;
+            enemy.setGridPosition( data.grid.x, data.grid.y );
             break;
     }
 

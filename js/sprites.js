@@ -252,3 +252,34 @@ class Patroller extends Enemy {
     }
 
 }
+
+class Chaser extends Enemy {
+    constructor() {
+        super("chaser");
+        this.target = {x:0, y:0};
+        this.speed = 1.6;
+    }
+
+    move() {
+        // find player
+        this.target.x = player.x;
+        this.target.y = player.y;
+
+        // set the direction, depending on
+        if( Math.abs(this.x - this.target.x) > Math.abs(this.y - this.target.y) ) {
+            // move x
+            if( this.x > this.target.x ) {
+                this.moveLeft();
+            } else {
+                this.moveRight();
+            }
+        } else {
+            // move y
+            if( this.y > this.target.y ) {
+                this.moveUp();
+            } else {
+                this.moveDown();
+            }
+        }
+    }
+}
