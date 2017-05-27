@@ -74,6 +74,7 @@ function gameLoaded() {
             "p_move": [0,2],
             "guard": [10],
             "hunter": [20],
+            "patroller": [30],
             "key": [11]
         },
         "framerate": 10
@@ -224,6 +225,8 @@ function createTiles( level ) {
     }
 }
 
+
+
 function createEnemies( level ) {
     let enemylist = game.levels[level].enemies;
 
@@ -238,17 +241,28 @@ function createEnemies( level ) {
     }
 }
 
+
+
 function createEnemy( data ) {
     var enemy = null;
 
-    if( data.type == "guard") {
-        enemy = new Enemy("guard");
-        enemy.x = data.grid.x*64 + data.offset.x + enemy.w/2;
-        enemy.y = data.grid.y*64 + data.offset.y + enemy.h/2;
+    switch( data.type ) {
+        case "guard":
+            enemy = new Guard();
+            enemy.offset = data.offset;
+            enemy.setGridPosition( data.grid.x, data.grid.y );
+            break;
+        case "patroller":
+            enemy = new Patroller( data.pattern );
+            enemy.offset = data.offset;
+            enemy.setPosition(0);
+            break;
     }
 
     return enemy;
 }
+
+
 
 function createItems( level ) {
     items = [];

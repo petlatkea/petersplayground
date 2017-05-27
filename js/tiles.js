@@ -158,7 +158,7 @@ class Exit extends Tile {
     }
 
     walkOn(object,xoffset,yoffset) {
-        if( !this.triggered && object == player && xoffset>24 && xoffset<64-8-24 && yoffset>24 && yoffset<64-24 ) {
+        if( !this.triggered && object == player && xoffset>16 && xoffset<64-8-16 && yoffset>16 && yoffset<64-16 ) {
             this.triggered = true;
             levelCompleted();
         }

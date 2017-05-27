@@ -14,22 +14,39 @@ class MovingSprite extends Sprite {
 
     moveDown() {
         this.turn("down");
-        this.moveWith(0,player.speed);
+        this.moveWith(0,this.speed);
     }
 
     moveUp() {
         this.turn("up");
-        this.moveWith(0,-player.speed);
+        this.moveWith(0,-this.speed);
     }
 
     moveLeft() {
         this.turn("left");
-        this.moveWith(-player.speed,0);
+        this.moveWith(-this.speed,0);
     }
 
     moveRight() {
         this.turn("right");
-        this.moveWith(player.speed,0);
+        this.moveWith(this.speed,0);
+    }
+
+    moveInDirection() {
+        switch( this.direction ) {
+            case "left":
+                this.moveWith(-this.speed,0);
+                break;
+            case "right":
+                this.moveWith(this.speed,0);
+                break;
+            case "down":
+                this.moveWith(0,this.speed);
+                break;
+            case "up":
+                this.moveWith(0,-this.speed);
+                break;
+        }
     }
 
     turn( direction ) {
@@ -151,11 +168,86 @@ class Enemy extends MovingSprite {
         super(spritename);
         this.w = 16;
         this.h = 24;
+        this.offset = {x:0, y:0};
     }
+
+
+    setGridPosition( x, y ) {
+        this.x = x*64 + this.offset.x + this.w/2;
+        this.y = y*64 + this.offset.y + this.h/2;
+    }
+
 
     move() {
         if(!this.moveWith( this.speed, 0 ) ) {
             this.speed = -this.speed;
+        }
+    }
+
+}
+
+class Guard extends Enemy {
+    constructor() {
+        super("guard");
+        // TODO: Remember direction and state
+    }
+
+}
+
+class Patroller extends Enemy {
+    constructor( pattern ) {
+        super("patroller");
+        this.pattern = pattern;
+        this.patternIndex = 0;
+    }
+
+    setPosition( index ) {
+        this.patternIndex = index;
+        this.setGridPosition( this.pattern[index].x, this.pattern[index].y );
+
+        this.goal = this.calculateDirection(index);
+    }
+
+    calculateDirection(index) {
+        let current = this.pattern[index];
+        let next = index<this.pattern.length-1 ? this.pattern[index+1] : this.pattern[0];
+
+        if( current.x == next.x && current.y < next.y ) {
+            this.turn("down");
+        } else if( current.x == next.x && current.y > next.y ) {
+            this.turn("up");
+        } else if( current.y == next.y && current.x < next.x ) {
+            this.turn("right");
+        } else if( current.y == next.y && current.x > next.x ) {
+            this.turn("left");
+        }
+
+        return next;
+    }
+
+    move() {
+
+        // move
+        this.moveInDirection();
+
+        // test if goal is reached
+
+//        console.log( Math.abs(this.goal.x*64+this.offset.x - this.x) );
+
+//        console.log(Math.abs(this.goal.y*64+this.offset.y+this.h/2 - this.y));
+
+        if( Math.abs(this.goal.x*64+this.offset.x+this.w/2 - this.x) <= this.speed &&
+            Math.abs(this.goal.y*64+this.offset.y+this.h/2 - this.y) <= this.speed ) {
+            // goal reached!
+
+            // increment index
+            this.patternIndex++;
+            if( this.patternIndex == this.pattern.length ) {
+                this.patternIndex = 0;
+            }
+
+            // sets next goal (maybe not entirely appropiate)
+            this.goal = this.calculateDirection(this.patternIndex);
         }
     }
 
