@@ -62,12 +62,18 @@ class MovingSprite extends Sprite {
                 rotation = -90;
             }
 
-            // fix rotation turning more than necessary
-            if( rotation-this.rotation < -180 ) {
-                rotation = 360+rotation;
+            if( Math.abs(rotation - this.rotation) > 180 ) {
+                rotation = (360-Math.abs(rotation)) * Math.sign(this.rotation);
             }
 
-            createjs.Tween.get(this).to({rotation: rotation}, 200);
+            createjs.Tween.get(this).to({rotation: rotation}, 200).call( function() {
+                if( this.rotation >= 360 ) {
+                    this.rotation-= 360;
+                }
+                if( this.rotation == -180 ) {
+                    this.rotation = 180;
+                }
+            });
 
             this.direction = direction;
         }

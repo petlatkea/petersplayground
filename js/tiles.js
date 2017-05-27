@@ -28,6 +28,8 @@ function createTile(type) {
         case 40:
         case 41:
         case 42:
+        case 50:
+        case 51:
         case 52: tile = new Wall(type);
             break;
 
