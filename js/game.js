@@ -8,6 +8,7 @@ var game = {
 };
 
 var tiles = null;
+var nodes = null;
 var player = null;
 var enemies = null;
 var items = null;
@@ -76,6 +77,7 @@ function gameLoaded() {
             "guard": [10],
             "hunter": [20],
             "patroller": [30],
+            "traveller": [31],
             "chaser": [21],
             "sentry":[22],
             "key": [11],
@@ -154,7 +156,6 @@ function keyReleased( event ) {
 
 function createStage() {
     game.stage = new createjs.Stage("canvas");
-//    game.stage.removeAllChildren();
 
     let canvas = document.querySelector("#canvas");
     game.stage.width = canvas.width;
@@ -190,6 +191,8 @@ function levelCompleted() {
 
 function buildLevel( level ) {
     createTiles( level );
+    createNodeGraph( level );
+
     createEnemies( level );
     createItems( level );
 
@@ -236,6 +239,54 @@ function createTiles( level ) {
     }
 }
 
+class Node {
+    constructor( id, x, y ) {
+        this.id = id;
+        this.x = x;
+        this.y = y;
+        this.connections = [];
+    }
+
+    connectTo( otherNode ) {
+        if( this.connections.indexOf( otherNode ) != -1 ) {
+//            console.log(this.id + " is already connected to " + otherNode.id);
+        } else {
+            this.connections.push( otherNode );
+            otherNode.connectTo( this );
+        }
+    }
+}
+
+function getNodeWithId( id ) {
+    return nodes.find( node => node.id == id);
+}
+
+function createNodeGraph( level ) {
+    nodes = [];
+
+    if( game.levels[level].nodes ) {
+
+        // pass over all the nodes two times: 1 create nodes, 2 create connections
+        let nodedefs = game.levels[level].nodes;
+        // pass 1
+        nodedefs.forEach( nodedef => {
+            let node = new Node(nodedef.id, nodedef.x, nodedef.y);
+            nodes.push(node);
+        });
+
+        // pass 2
+        nodedefs.forEach( nodedef => {
+            let node = getNodeWithId(nodedef.id);
+            nodedef.connections.forEach( connect => {
+                let connected = getNodeWithId(connect);
+                node.connectTo( connected );
+            });
+
+
+        });
+
+    }
+}
 
 
 function createEnemies( level ) {
@@ -277,6 +328,13 @@ function createEnemy( data ) {
             enemy = new Sentry();
             enemy.offset = data.offset;
             enemy.setGridPosition( data.grid.x, data.grid.y );
+            break;
+        case "traveller":
+            let start = getNodeWithId(data.startNode);
+            enemy = new Traveller();
+            enemy.offset = data.offset;
+            enemy.setCurrentNode(start);
+            enemy.setNextNode(null);
             break;
     }
 

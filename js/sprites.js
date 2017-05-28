@@ -386,3 +386,73 @@ class Sentry extends Enemy {
     }
 
 }
+
+class Traveller extends Enemy {
+    constructor() {
+        super("traveller");
+        this.lastNode = null;
+        this.currentNode = null;
+        this.nextNode = null;
+    }
+
+    setCurrentNode( node ) {
+        this.currentNode = node;
+        this.setGridPosition( node.x, node.y);
+    }
+
+    setNextNode( node ) {
+        this.nextNode = node;
+
+        if( node != null ) {
+            this.calculateDirection( this.currentNode, this.nextNode );
+        }
+    }
+
+
+    move() {
+        // if nextNode is null, calculate a new nextNode
+        if( this.nextNode == null ) {
+            // find all possibilities
+            // remove the last node - so we don't run in circles
+            let lastid = this.lastNode == null?0:this.lastNode.id;
+            let possibilities = this.currentNode.connections.filter( node => node.id != lastid );
+            if( possibilities.length < 1 ) {
+                possibilities = this.currentNode.connections.slice();
+            }
+
+            // select a random node in the list
+            this.nextNode = possibilities[ Math.floor(Math.random()*possibilities.length) ];
+            this.calculateDirection(this.currentNode, this.nextNode);
+            this.lastNode = this.currentNode;
+
+            console.log("Move traveller towards: " + this.nextNode.id);
+
+        } else {
+            // move in the given direction
+            this.moveInDirection();
+
+
+            // check if we have reached the next node
+            if( Math.abs(this.nextNode.x*64+this.offset.x+this.w/2 - this.x) <= this.speed &&
+                Math.abs(this.nextNode.y*64+this.offset.y+this.h/2 - this.y) <= this.speed ) {
+                this.currentNode = this.nextNode;
+                this.nextNode = null;
+            }
+
+        }
+
+    }
+
+    calculateDirection( current, next) {
+        if( current.x == next.x && current.y < next.y ) {
+            this.turn("down");
+        } else if( current.x == next.x && current.y > next.y ) {
+            this.turn("up");
+        } else if( current.y == next.y && current.x < next.x ) {
+            this.turn("right");
+        } else if( current.y == next.y && current.x > next.x ) {
+            this.turn("left");
+        }
+    }
+
+}
