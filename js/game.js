@@ -11,6 +11,7 @@ var tiles = null;
 var player = null;
 var enemies = null;
 var items = null;
+var shots = null;
 
 function pageLoaded() {
     createStage();
@@ -76,7 +77,10 @@ function gameLoaded() {
             "hunter": [20],
             "patroller": [30],
             "chaser": [21],
-            "key": [11]
+            "sentry":[22],
+            "key": [11],
+            "shot_double": [1],
+            "shot_single": [2]
         },
         "framerate": 10
     });
@@ -152,6 +156,10 @@ function createStage() {
     game.stage = new createjs.Stage("canvas");
 //    game.stage.removeAllChildren();
 
+    let canvas = document.querySelector("#canvas");
+    game.stage.width = canvas.width;
+    game.stage.height = canvas.height;
+
     createjs.Ticker.setFPS(60);
     createjs.Ticker.on("tick", ticker);
 }
@@ -184,6 +192,8 @@ function buildLevel( level ) {
     createTiles( level );
     createEnemies( level );
     createItems( level );
+
+    shots = [];
 
     setPlayerStart( level );
 }
@@ -260,6 +270,11 @@ function createEnemy( data ) {
             break;
         case "chaser":
             enemy = new Chaser();
+            enemy.offset = data.offset;
+            enemy.setGridPosition( data.grid.x, data.grid.y );
+            break;
+        case "sentry":
+            enemy = new Sentry();
             enemy.offset = data.offset;
             enemy.setGridPosition( data.grid.x, data.grid.y );
             break;
@@ -376,51 +391,75 @@ function hitTest( objA, objB ) {
     }
 }
 
+function createShot(startX, startY, direction, type) {
+    let shot = new Shot(type);
+
+    shot.setPosition(startX, startY);
+    shot.setDirection(direction);
+
+    game.stage.addChild(shot);
+
+    shots.push(shot);
+}
+
+function removeShot( shot ) {
+    shots.splice(shots.indexOf(shot),1);
+    game.stage.removeChild(shot);
+}
 
 
 function ticker( event ) {
 
     if( game.playing ) {
 
+        if( player ) {
+            // move player
+            if( keys.left ) {
+                player.moveLeft();
+            } else if( keys.right ) {
+                player.moveRight();
+            } else
 
-
-    if( player ) {
-        // move player
-        if( keys.left ) {
-            player.moveLeft();
-        } else if( keys.right ) {
-            player.moveRight();
-        } else
-
-        if( keys.up ) {
-            player.moveUp();
-        } else if( keys.down ) {
-            player.moveDown();
-        } else {
-            // no movement at all
-            player.stopMoving();
+            if( keys.up ) {
+                player.moveUp();
+            } else if( keys.down ) {
+                player.moveDown();
+            } else {
+                // no movement at all
+                player.stopMoving();
+            }
         }
-    }
 
-    if( enemies ) {
-        // move enemies, and test for collisions
-        enemies.forEach( enemy => {
-            enemy.move()
-            // test collision with player
-            if( hitTest( enemy, player) ) {
-                player.hitBy( enemy );
-            }
-        });
-    }
+        if( enemies ) {
+            // move enemies, and test for collisions
+            enemies.forEach( enemy => {
+                enemy.move()
+                // test collision with player
+                if( hitTest( enemy, player) ) {
+                    player.hitBy( enemy );
+                }
+            });
+        }
 
-    if( items ) {
-        // check if touching any item
-        items.forEach( item => {
-            if( hitTest(player, item) ) {
-                player.pickUp( item );
-            }
-        })
-    }
+        if( items ) {
+            // check if touching any item
+            items.forEach( item => {
+                if( hitTest(player, item) ) {
+                    player.pickUp( item );
+                }
+            })
+        }
+
+        if( shots ) {
+            shots.forEach( shot => {
+                shot.move();
+                // TODO: enemy hittest - maybe enemies should hurt eachother ... or themselves
+                if( hitTest( shot, player) ) {
+                    player.hitBy( shot );
+                    removeShot(shot);
+                }
+            });
+        }
 
     }
 

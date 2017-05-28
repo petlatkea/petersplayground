@@ -4,6 +4,54 @@ class Sprite extends createjs.Sprite {
     }
 }
 
+class Shot extends Sprite {
+    constructor(type) {
+        switch(type) {
+            case 1: super("shot_single");
+                this.w = 8;
+                this.h = 2;
+                this.speed = 8;
+                break;
+            case 2: super("shot_double");
+                this.w = 8;
+                this.h = 9;
+                this.speed = 8;
+                break;
+        }
+    }
+
+
+    setPosition(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    setDirection(direction) {
+        this.rotation = direction;
+        this.direction = direction * Math.PI/180;
+    }
+
+    move() {
+        // move in direction
+        let dx = Math.cos(this.direction)*this.speed;
+        let dy = Math.sin(this.direction)*this.speed;
+
+        if( canMoveTo(this, this.x+dx, this.y+dy) ) {
+            this.x+=dx;
+            this.y+=dy;
+
+            // if this shot is outside the canvas - let it die
+            if( this.x+this.w/2 < 0 || this.y+this.h/2 < 0 || this.x-this.w/2 > game.stage.width || this.y-this.h/2 > game.stage.height) {
+                removeShot(this);
+            }
+
+
+        } else {
+            removeShot(this);
+        }
+    }
+}
+
 
 class MovingSprite extends Sprite {
     constructor(spritename) {
@@ -288,4 +336,53 @@ class Chaser extends Enemy {
             }
         }
     }
+}
+
+class Sentry extends Enemy {
+    constructor() {
+        super("sentry");
+        this.h = 10;
+
+        this.rotationSpeed = .5;
+        this.rotationMin = this.rotation-30;
+        this.rotationMax = this.rotation+30;
+        this.rotationDirection = 1;
+
+        this.lastshot = 0;
+    }
+
+    move() {
+
+        this.rotation += this.rotationSpeed * this.rotationDirection;
+
+        if(this.rotationDirection >0 && this.rotation >= this.rotationMax) {
+            this.rotation = this.rotationMax;
+            this.rotationDirection *= -1;
+        } else if( this.rotationDirection < 0 && this.rotation <= this.rotationMin) {
+            this.rotation = this.rotationMin;
+            this.rotationDirection *=-1;
+        }
+
+
+        // calculate angle from this to the player
+        let angle = Math.atan2(player.y-this.y, player.x-this.x) * 180/Math.PI;
+
+        let diff = Math.abs(this.rotation - angle);
+        if( diff < 5 ) {
+            this.fireShot();
+        }
+    }
+
+    fireShot() {
+        // can only fire a shot, if more than 100 ms has passed since last shot
+        let now = Date.now();
+        let timesincelast = now - this.lastshot;
+        if( timesincelast > 100 ) {
+            this.lastshot = now;
+
+            // create a shot, and give it the same direction as us
+            createShot(this.x+10, this.y, this.rotation,1);
+        }
+    }
+
 }
