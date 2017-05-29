@@ -58,6 +58,7 @@ class MovingSprite extends Sprite {
         super(spritename);
         this.speed = 1;
         this.direction = "left";
+        this.offset = {x:0, y:0};
     }
 
     moveDown() {
@@ -94,6 +95,30 @@ class MovingSprite extends Sprite {
             case "up":
                 this.moveWith(0,-this.speed);
                 break;
+        }
+    }
+
+    turnTowardsGrid( other ) {
+        this.turnTowards( {x:other.x*64,y:other.y*64} );
+    }
+
+    turnTowards( other ) {
+        let x = other.x;
+        let y = other.y;
+
+        let xd = this.x - x;
+        let yd = this.y - y;
+        let xd_a = Math.abs(xd);
+        let yd_a = Math.abs(yd);
+
+        if( yd_a > xd_a && yd < 0 ) {
+            this.turn("down");
+        } else if( yd_a > xd_a && yd > 0 ) {
+            this.turn("up");
+        } else if( xd_a > yd_a && xd < 0 ) {
+            this.turn("right");
+        } else if( xd_a > yd_a && xd > 0 ) {
+            this.turn("left");
         }
     }
 
@@ -137,6 +162,21 @@ class MovingSprite extends Sprite {
             return false;
         }
     }
+
+
+    /* returns true if this enemy has reached a gridposition
+       - where a gridposition is any object with an x and y value (in grid-coordinates)
+    */
+    isAtGridPosition( gridposition ) {
+        return Math.abs(gridposition.x*64+this.offset.x+this.w/2 - this.x) <= this.speed &&
+               Math.abs(gridposition.y*64+this.offset.y+this.h/2 - this.y) <= this.speed;
+    }
+
+    setGridPosition( x, y ) {
+        this.x = x*64 + this.offset.x + this.w/2;
+        this.y = y*64 + this.offset.y + this.h/2;
+    }
+
 
 
 
@@ -222,14 +262,12 @@ class Enemy extends MovingSprite {
         super(spritename);
         this.w = 16;
         this.h = 24;
-        this.offset = {x:0, y:0};
     }
 
 
-    setGridPosition( x, y ) {
-        this.x = x*64 + this.offset.x + this.w/2;
-        this.y = y*64 + this.offset.y + this.h/2;
-    }
+
+
+
 
 
     move() {
@@ -259,39 +297,26 @@ class Patroller extends Enemy {
         this.patternIndex = index;
         this.setGridPosition( this.pattern[index].x, this.pattern[index].y );
 
-        this.goal = this.calculateDirection(index);
+        this.goal = this.getNextPosition();
+        this.turnTowardsGrid( this.goal );
     }
 
-    calculateDirection(index) {
-        let current = this.pattern[index];
-        let next = index<this.pattern.length-1 ? this.pattern[index+1] : this.pattern[0];
-
-        if( current.x == next.x && current.y < next.y ) {
-            this.turn("down");
-        } else if( current.x == next.x && current.y > next.y ) {
-            this.turn("up");
-        } else if( current.y == next.y && current.x < next.x ) {
-            this.turn("right");
-        } else if( current.y == next.y && current.x > next.x ) {
-            this.turn("left");
+    getNextPosition( index ) {
+        if(!index) {
+            index = this.patternIndex;
         }
+        let next = index<this.pattern.length-1 ? this.pattern[index+1] : this.pattern[0];
 
         return next;
     }
 
-    move() {
 
+    move() {
         // move
         this.moveInDirection();
 
         // test if goal is reached
-
-//        console.log( Math.abs(this.goal.x*64+this.offset.x - this.x) );
-
-//        console.log(Math.abs(this.goal.y*64+this.offset.y+this.h/2 - this.y));
-
-        if( Math.abs(this.goal.x*64+this.offset.x+this.w/2 - this.x) <= this.speed &&
-            Math.abs(this.goal.y*64+this.offset.y+this.h/2 - this.y) <= this.speed ) {
+        if( this.isAtGridPosition(this.goal) ) {
             // goal reached!
 
             // increment index
@@ -301,10 +326,10 @@ class Patroller extends Enemy {
             }
 
             // sets next goal (maybe not entirely appropiate)
-            this.goal = this.calculateDirection(this.patternIndex);
+            this.goal = this.getNextPosition();
+            this.turnTowardsGrid( this.goal );
         }
     }
-
 }
 
 class Chaser extends Enemy {
@@ -319,22 +344,8 @@ class Chaser extends Enemy {
         this.target.x = player.x;
         this.target.y = player.y;
 
-        // set the direction, depending on
-        if( Math.abs(this.x - this.target.x) > Math.abs(this.y - this.target.y) ) {
-            // move x
-            if( this.x > this.target.x ) {
-                this.moveLeft();
-            } else {
-                this.moveRight();
-            }
-        } else {
-            // move y
-            if( this.y > this.target.y ) {
-                this.moveUp();
-            } else {
-                this.moveDown();
-            }
-        }
+        this.turnTowards( this.target );
+        this.moveInDirection();
     }
 }
 
@@ -404,7 +415,8 @@ class Traveller extends Enemy {
         this.nextNode = node;
 
         if( node != null ) {
-            this.calculateDirection( this.currentNode, this.nextNode );
+            //this.calculateDirection( this.currentNode, this.nextNode );
+            this.turnTowardsGrid(this.nextNode);
         }
     }
 
@@ -422,7 +434,8 @@ class Traveller extends Enemy {
 
             // select a random node in the list
             this.nextNode = possibilities[ Math.floor(Math.random()*possibilities.length) ];
-            this.calculateDirection(this.currentNode, this.nextNode);
+            //this.calculateDirection(this.currentNode, this.nextNode);
+            this.turnTowardsGrid( this.nextNode ) ;
             this.lastNode = this.currentNode;
 
             console.log("Move traveller towards: " + this.nextNode.id);
@@ -431,10 +444,8 @@ class Traveller extends Enemy {
             // move in the given direction
             this.moveInDirection();
 
-
             // check if we have reached the next node
-            if( Math.abs(this.nextNode.x*64+this.offset.x+this.w/2 - this.x) <= this.speed &&
-                Math.abs(this.nextNode.y*64+this.offset.y+this.h/2 - this.y) <= this.speed ) {
+            if( this.isAtGridPosition(this.nextNode) ) {
                 this.currentNode = this.nextNode;
                 this.nextNode = null;
             }
@@ -443,7 +454,7 @@ class Traveller extends Enemy {
 
     }
 
-    calculateDirection( current, next) {
+/*    calculateDirection( current, next) {
         if( current.x == next.x && current.y < next.y ) {
             this.turn("down");
         } else if( current.x == next.x && current.y > next.y ) {
@@ -453,6 +464,6 @@ class Traveller extends Enemy {
         } else if( current.y == next.y && current.x > next.x ) {
             this.turn("left");
         }
-    }
+    }*/
 
 }
