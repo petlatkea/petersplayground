@@ -22,6 +22,8 @@ class Shot extends Sprite {
 
 
     setPosition(x, y) {
+        this.oldX = this.x;
+        this.oldY = this.y;
         this.x = x;
         this.y = y;
     }
@@ -37,6 +39,9 @@ class Shot extends Sprite {
         let dy = Math.sin(this.direction)*this.speed;
 
         if( canMoveTo(this, this.x+dx, this.y+dy) ) {
+            this.oldX = this.x;
+            this.oldY = this.y;
+
             this.x+=dx;
             this.y+=dy;
 
@@ -45,8 +50,8 @@ class Shot extends Sprite {
                 removeShot(this);
             }
 
-
         } else {
+            // if this shot can't move anymore - let it die
             removeShot(this);
         }
     }
@@ -154,6 +159,8 @@ class MovingSprite extends Sprite {
 
     moveWith( xoffset, yoffset ) {
         if( canMoveTo(this, this.x+xoffset, this.y+yoffset) ) {
+            this.oldX = this.x;
+            this.oldY = this.y;
             this.x += xoffset;
             this.y += yoffset;
             movedTo( this, this.x, this.y);
@@ -173,6 +180,8 @@ class MovingSprite extends Sprite {
     }
 
     setGridPosition( x, y ) {
+        this.oldX = this.x;
+        this.oldY = this.y;
         this.x = x*64 + this.offset.x + this.w/2;
         this.y = y*64 + this.offset.y + this.h/2;
     }
@@ -438,8 +447,6 @@ class Traveller extends Enemy {
             this.turnTowardsGrid( this.nextNode ) ;
             this.lastNode = this.currentNode;
 
-            console.log("Move traveller towards: " + this.nextNode.id);
-
         } else {
             // move in the given direction
             this.moveInDirection();
@@ -449,21 +456,7 @@ class Traveller extends Enemy {
                 this.currentNode = this.nextNode;
                 this.nextNode = null;
             }
-
         }
-
     }
-
-/*    calculateDirection( current, next) {
-        if( current.x == next.x && current.y < next.y ) {
-            this.turn("down");
-        } else if( current.x == next.x && current.y > next.y ) {
-            this.turn("up");
-        } else if( current.y == next.y && current.x < next.x ) {
-            this.turn("right");
-        } else if( current.y == next.y && current.x > next.x ) {
-            this.turn("left");
-        }
-    }*/
 
 }

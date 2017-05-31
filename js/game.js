@@ -32,7 +32,7 @@ function createPreloader() {
     game.q.loadManifest([
         "js/sprites.js",
         "js/tiles.js",
-        {id:"tiles", src: "tiles-01.png"},
+        {id:"tilesprites", src: "tiles.json", type:"spritesheet"},
         {id:"sprites", src: "sprites-01.png"},
         {id:"levels", src: "levels.json"}
     ]);
@@ -50,24 +50,10 @@ function gameLoaded() {
     game.levels = game.q.getResult("levels");
 
     // prepare tiles
-    game.tiles = new createjs.SpriteSheet( {
-        "images": [game.q.getResult("tiles")],
-        "frames": {"width":64, "height":64, "regX": 0, "regY":0},
-         "animations": {
-            "space":[0],
-            "floor":[1],
-            "bluedoor_closed": [23],
-            "bluedoor_opened": [27],
-            "bluedoor_open": [23,27,"bluedoor_opened"],
-            "reddoor_closed": [33],
-            "reddoor_opened": [37],
-            "reddoor_open": [33,37,"reddoor_opened"]
-        },
-        "framerate": 5
-    });
-
+    game.tiles = game.q.getResult("tilesprites");
 
     // prepare sprites
+    // TODO: Move spritesheet to JSON
     game.sprites = new createjs.SpriteSheet( {
         "images": [game.q.getResult("sprites")],
         "frames": {"width":32, "height":32, "regX": 16, "regY":16},
@@ -86,7 +72,6 @@ function gameLoaded() {
         },
         "framerate": 10
     });
-
 
     initGame();
 }
@@ -190,6 +175,9 @@ function levelCompleted() {
 }
 
 function buildLevel( level ) {
+
+    document.title = game.levels[level].nr + ": " + game.levels[level].name;
+
     createTiles( level );
     createNodeGraph( level );
 
@@ -202,12 +190,10 @@ function buildLevel( level ) {
 }
 
 function setPlayerStart( level ) {
-    // For now, position the player at the first Entry found in the map
-    // TODO: Look for an entry-object in the tiles instead
-    let map = game.levels[level].map
-    for( let y=0; y < map.length; y++) {
-        for( let x=0; x < map[y].length; x++ ) {
-            if( map[y][x] == 8 ) {
+    // Find the first Entry object in the tiles - position the player there
+    for( let y=0; y<tiles.length; y++) {
+        for( let x=0; x<tiles[y].length; x++) {
+            if( tiles[y][x] instanceof Entry ) {
                 player.x = x*64+38 + player.w/2;
                 player.y = y*64+17 + player.h/2;
                 break;
@@ -215,6 +201,8 @@ function setPlayerStart( level ) {
         }
     }
 }
+
+
 
 function createTiles( level ) {
     tiles = [];
@@ -382,61 +370,43 @@ function getTileAt( x, y ) {
 }
 
 
-function canWalkOnTile(object, xpos, ypos ) {
-    let gridx = Math.floor(xpos/64);
-    let gridy = Math.floor(ypos/64);
-
-    let tile = getTileAt(gridx,gridy);
-    let tileX = xpos - gridx * 64;
-    let tileY = ypos - gridy * 64;
-
-    return tile.canWalkOn(object,tileX,tileY)
-}
-
 /* return if the given position is valid for the object */
 function canMoveTo( object, xpos, ypos ) {
     let validposition = true;
 
     // find the list of tile-coordinates that the object touches (from the given position)
-    // top left
-    let top = ypos-object.h/2;
-    let left = xpos-object.w/2;
-    let bot = ypos+object.h/2;
-    let right = xpos+object.w/2;
+    // find leftmost, rightmost, top and bottom tile
+    let leftTile = Math.floor((xpos-object.w/2)/64);
+    let rightTile = Math.floor((xpos+object.w/2)/64);
+    let topTile = Math.floor((ypos-object.h/2)/64);
+    let bottomTile = Math.floor((ypos+object.h/2)/64);
 
-    // find tile at x, y
-    // add Relative x and y for tiles that can be partly walked on
-    validposition = canWalkOnTile(object,left, top) && canWalkOnTile(object,left, bot) &&
-                    canWalkOnTile(object,right, top) && canWalkOnTile(object,right, bot);
+    for( let x=leftTile; x <= rightTile; x++ ) {
+        for( let y=topTile; y <= bottomTile; y++ ) {
+            let tile = getTileAt(x,y);
+            validposition = validposition & tile.canWalkOn(object, xpos-tile.x, ypos-tile.y );
+        }
+    }
 
     return validposition;
 }
 
-/* called after an object has been moved - takes care of what happens then */
+/* called just before an object is being moved - takes care of what happens then */
 function movedTo(object, xpos, ypos) {
-    let top = ypos-object.h/2;
-    let left = xpos-object.w/2;
-    let bot = ypos+object.h/2;
-    let right = xpos+object.w/2;
+    let leftTile = Math.floor((xpos-object.w/2)/64);
+    let rightTile = Math.floor((xpos+object.w/2)/64);
+    let topTile = Math.floor((ypos-object.h/2)/64);
+    let bottomTile = Math.floor((ypos+object.h/2)/64);
 
-    walkOnTile(object,left,top);
-    walkOnTile(object,left,bot);
-    walkOnTile(object,right,top);
-    walkOnTile(object,right,bot);
-}
-
-function walkOnTile(object,xpos,ypos) {
-    let gridx = Math.floor(xpos/64);
-    let gridy = Math.floor(ypos/64);
-
-    let tile = getTileAt(gridx,gridy);
-    let tileX = xpos - gridx * 64;
-    let tileY = ypos - gridy * 64;
-
-    if( tile ) {
-        tile.walkOn(object, tileX, tileY);
+    for( let x=leftTile; x <= rightTile; x++ ) {
+        for( let y=topTile; y <= bottomTile; y++ ) {
+            let tile = getTileAt(x,y);
+            tile.walkOn(object, xpos-tile.x, ypos-tile.y );
+        }
     }
 }
+
+
 
 function hitTest( objA, objB ) {
     if( objB.x-objB.regX < objA.x-objA.regX+objA.w &&

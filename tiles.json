@@ -1,0 +1,76 @@
+{
+    "images": ["tiles-01.png"],
+    "frames": {"width":64, "height":64, "regX": 0, "regY":0},
+     "animations": {
+        "space":[0],
+        "entry":[8],
+        "exit":[9],
+        "floor":[1],
+        "floor_NS":[2],
+        "floor_EW":[3],
+        "floor_ESW":[4],
+        "floor_NEW":[5],
+        "floor_ES":[6],
+        "floor_SW":[7],
+        "floor_NESW":[13],
+        "floor_NES":[14],
+        "floor_NSW":[15],
+        "floor_NE":[16],
+        "floor_NW":[17],
+
+        "wall":[21],
+
+        "wall_ES":[10],
+        "wall_NS":[20],
+        "wall_EW":[11],
+        "wall_SW":[12],
+        "wall_NE":[30],
+        "wall_NW":[32],
+
+        "wall_NEW":[50],
+        "wall_NES":[51],
+        "wall_ESW":[31],
+        "wall_NSW":[22],
+
+        "wall_N":[52],
+        "wall_S":[42],
+        "wall_W":[41],
+        "wall_E":[40],
+
+        "P24_ES":[43],
+        "P24_SW":[44],
+
+        "P24_W_NS":[58],
+        "P24_S_EW":[57],
+        "P24_E_S":[56],
+        "P24_W_S":[55],
+        "P24_NW":[54],
+        "P24_NE":[53],
+        "P24_E_NS":[48],
+        "P24_N_EW":[47],
+        "P24_E_N":[46],
+        "P24_W_N":[45],
+
+
+        "bluedoor_closed": [23],
+        "bluedoor_opened": [27],
+        "bluedoor_opening": [23,27,"bluedoor_opened"],
+        "bluedoor_closing": {
+            "frames": [27,26,25,24,23],
+            "next": "bluedoor_closed"
+        },
+        "reddoor_closed": [33],
+        "reddoor_opened": [37],
+        "reddoor_opening": [33,37,"reddoor_opened"],
+        "reddoor_closing": {
+            "frames": [37,36,35,34,33],
+            "next": "reddoor_closed"
+        }
+
+    },
+    "framerate": 10
+}
+
+
+
+
