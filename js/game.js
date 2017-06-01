@@ -31,6 +31,7 @@ function createPreloader() {
 
     game.q.loadManifest([
         "js/sprites.js",
+        "js/enemies.js",
         "js/tiles.js",
         {id:"tilesprites", src: "tiles.json", type:"spritesheet"},
         {id:"sprites", src: "sprites-01.png"},
@@ -68,9 +69,16 @@ function gameLoaded() {
             "sentry":[22],
             "key": [11],
             "shot_double": [1],
-            "shot_single": [2]
+            "shot_single": [2],
+            "hunter_neutral": [20],
+            "hunter_searching": {
+                "frames": [25,26,27,28,29,28,27,26]
+                },
+            "hunter_chasing": {
+                "frames": [35,36]
+            }
         },
-        "framerate": 10
+        "framerate": 5
     });
 
     initGame();
@@ -81,7 +89,7 @@ function initGame() {
     window.addEventListener("keydown", keyPressed);
     window.addEventListener("keyup", keyReleased);
 
-    game.level = 0;
+    game.level = 6;
 
     createPlayer();
 
@@ -269,10 +277,7 @@ function createNodeGraph( level ) {
                 let connected = getNodeWithId(connect);
                 node.connectTo( connected );
             });
-
-
         });
-
     }
 }
 
@@ -293,41 +298,6 @@ function createEnemies( level ) {
 
 
 
-function createEnemy( data ) {
-    var enemy = null;
-
-    switch( data.type ) {
-        case "guard":
-            enemy = new Guard();
-            enemy.offset = data.offset;
-            enemy.setGridPosition( data.grid.x, data.grid.y );
-            break;
-        case "patroller":
-            enemy = new Patroller( data.pattern );
-            enemy.offset = data.offset;
-            enemy.setPosition(0);
-            break;
-        case "chaser":
-            enemy = new Chaser();
-            enemy.offset = data.offset;
-            enemy.setGridPosition( data.grid.x, data.grid.y );
-            break;
-        case "sentry":
-            enemy = new Sentry();
-            enemy.offset = data.offset;
-            enemy.setGridPosition( data.grid.x, data.grid.y );
-            break;
-        case "traveller":
-            let start = getNodeWithId(data.startNode);
-            enemy = new Traveller();
-            enemy.offset = data.offset;
-            enemy.setCurrentNode(start);
-            enemy.setNextNode(null);
-            break;
-    }
-
-    return enemy;
-}
 
 
 

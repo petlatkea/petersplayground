@@ -175,21 +175,28 @@ class MovingSprite extends Sprite {
        - where a gridposition is any object with an x and y value (in grid-coordinates)
     */
     isAtGridPosition( gridposition ) {
+        // calculate distance to grid (with offset)
+        let dist = Math.hypot(gridposition.x*64+this.offset.x+this.w/2-this.x,
+                              gridposition.y*64+this.offset.y+this.h/2-this.y);
+
+        return dist < this.w/2;
+
+
+
+
+        /*
         return Math.abs(gridposition.x*64+this.offset.x+this.w/2 - this.x) <= this.speed &&
-               Math.abs(gridposition.y*64+this.offset.y+this.h/2 - this.y) <= this.speed;
+               Math.abs(gridposition.y*64+this.offset.y+this.h/2 - this.y) <= this.speed;*/
     }
 
-    setGridPosition( x, y ) {
+    setAtGridPosition( x, y ) {
         this.oldX = this.x;
         this.oldY = this.y;
         this.x = x*64 + this.offset.x + this.w/2;
         this.y = y*64 + this.offset.y + this.h/2;
     }
-
-
-
-
 }
+
 
 class StationarySprite extends Sprite {
     constructor(spritename) {
@@ -259,204 +266,6 @@ class Player extends MovingSprite {
             return this.items.find( item => item.type == itemName );
         }
         return undefined;
-    }
-
-
-
-
-}
-
-class Enemy extends MovingSprite {
-    constructor(spritename) {
-        super(spritename);
-        this.w = 16;
-        this.h = 24;
-    }
-
-
-
-
-
-
-
-    move() {
-        if(!this.moveWith( this.speed, 0 ) ) {
-            this.speed = -this.speed;
-        }
-    }
-
-}
-
-class Guard extends Enemy {
-    constructor() {
-        super("guard");
-        // TODO: Remember direction and state
-    }
-
-}
-
-class Patroller extends Enemy {
-    constructor( pattern ) {
-        super("patroller");
-        this.pattern = pattern;
-        this.patternIndex = 0;
-    }
-
-    setPosition( index ) {
-        this.patternIndex = index;
-        this.setGridPosition( this.pattern[index].x, this.pattern[index].y );
-
-        this.goal = this.getNextPosition();
-        this.turnTowardsGrid( this.goal );
-    }
-
-    getNextPosition( index ) {
-        if(!index) {
-            index = this.patternIndex;
-        }
-        let next = index<this.pattern.length-1 ? this.pattern[index+1] : this.pattern[0];
-
-        return next;
-    }
-
-
-    move() {
-        // move
-        this.moveInDirection();
-
-        // test if goal is reached
-        if( this.isAtGridPosition(this.goal) ) {
-            // goal reached!
-
-            // increment index
-            this.patternIndex++;
-            if( this.patternIndex == this.pattern.length ) {
-                this.patternIndex = 0;
-            }
-
-            // sets next goal (maybe not entirely appropiate)
-            this.goal = this.getNextPosition();
-            this.turnTowardsGrid( this.goal );
-        }
-    }
-}
-
-class Chaser extends Enemy {
-    constructor() {
-        super("chaser");
-        this.target = {x:0, y:0};
-        this.speed = 1.6;
-    }
-
-    move() {
-        // find player
-        this.target.x = player.x;
-        this.target.y = player.y;
-
-        this.turnTowards( this.target );
-        this.moveInDirection();
-    }
-}
-
-class Sentry extends Enemy {
-    constructor() {
-        super("sentry");
-        this.h = 10;
-
-        this.rotationSpeed = .5;
-        this.rotationMin = this.rotation-30;
-        this.rotationMax = this.rotation+30;
-        this.rotationDirection = 1;
-
-        this.lastshot = 0;
-    }
-
-    move() {
-
-        this.rotation += this.rotationSpeed * this.rotationDirection;
-
-        if(this.rotationDirection >0 && this.rotation >= this.rotationMax) {
-            this.rotation = this.rotationMax;
-            this.rotationDirection *= -1;
-        } else if( this.rotationDirection < 0 && this.rotation <= this.rotationMin) {
-            this.rotation = this.rotationMin;
-            this.rotationDirection *=-1;
-        }
-
-
-        // calculate angle from this to the player
-        let angle = Math.atan2(player.y-this.y, player.x-this.x) * 180/Math.PI;
-
-        let diff = Math.abs(this.rotation - angle);
-        if( diff < 5 ) {
-            this.fireShot();
-        }
-    }
-
-    fireShot() {
-        // can only fire a shot, if more than 100 ms has passed since last shot
-        let now = Date.now();
-        let timesincelast = now - this.lastshot;
-        if( timesincelast > 100 ) {
-            this.lastshot = now;
-
-            // create a shot, and give it the same direction as us
-            createShot(this.x+10, this.y, this.rotation,1);
-        }
-    }
-
-}
-
-class Traveller extends Enemy {
-    constructor() {
-        super("traveller");
-        this.lastNode = null;
-        this.currentNode = null;
-        this.nextNode = null;
-    }
-
-    setCurrentNode( node ) {
-        this.currentNode = node;
-        this.setGridPosition( node.x, node.y);
-    }
-
-    setNextNode( node ) {
-        this.nextNode = node;
-
-        if( node != null ) {
-            //this.calculateDirection( this.currentNode, this.nextNode );
-            this.turnTowardsGrid(this.nextNode);
-        }
-    }
-
-
-    move() {
-        // if nextNode is null, calculate a new nextNode
-        if( this.nextNode == null ) {
-            // find all possibilities
-            // remove the last node - so we don't run in circles
-            let lastid = this.lastNode == null?0:this.lastNode.id;
-            let possibilities = this.currentNode.connections.filter( node => node.id != lastid );
-            if( possibilities.length < 1 ) {
-                possibilities = this.currentNode.connections.slice();
-            }
-
-            // select a random node in the list
-            this.nextNode = possibilities[ Math.floor(Math.random()*possibilities.length) ];
-            //this.calculateDirection(this.currentNode, this.nextNode);
-            this.turnTowardsGrid( this.nextNode ) ;
-            this.lastNode = this.currentNode;
-
-        } else {
-            // move in the given direction
-            this.moveInDirection();
-
-            // check if we have reached the next node
-            if( this.isAtGridPosition(this.nextNode) ) {
-                this.currentNode = this.nextNode;
-                this.nextNode = null;
-            }
-        }
     }
 
 }
