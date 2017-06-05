@@ -7,6 +7,11 @@ function createEnemy( data ) {
             enemy.offset = data.offset;
             enemy.setAtGridPosition( data.grid.x, data.grid.y );
             break;
+         case "guard2":
+            enemy = new Guard2();
+            enemy.offset = data.offset;
+            enemy.setAtGridPosition( data.grid.x, data.grid.y );
+            break;
         case "patroller":
             enemy = new Patroller( data.pattern );
             enemy.offset = data.offset;
@@ -65,6 +70,289 @@ class Guard extends Enemy {
     }
 
 }
+
+/* NOTE: This really should replace the Guard
+   - he is kept for historical reasons, since this is a playground!
+   */
+class Guard2 extends Enemy {
+    constructor() {
+        super("guard");
+        this.debuginfo = true;
+
+        let self = this;
+
+        // Create tazer
+        let tazer = new createjs.Sprite(game.sprites,"electricity");
+        tazer.x = 20;
+        tazer.visible = false;
+        this.addChild(tazer);
+        this.tazer = tazer;
+
+
+        // Create cone of vision - if debugging is enabled
+        // TODO: Maybe enable debugging on game-object
+        if( this.debuginfo ) {
+            var g = new createjs.Graphics();
+            g.setStrokeStyle(1);
+            g.beginStroke("yellow");
+
+            // calculate x&y from degress and dist
+            let dist = 200;
+            let angle = 30;
+            let x = Math.cos(angle/180*Math.PI)*dist;
+            let y = Math.sin(angle/180*Math.PI)*dist;
+            g.moveTo(0,0);
+            g.lineTo(x,y);
+            g.moveTo(x,-y);
+            g.lineTo(0,0);
+            g.arc(0,0,dist,-angle/180*Math.PI,angle/180*Math.PI);
+
+            this.cone = new createjs.Shape(g);
+            this.addChild(this.cone);
+        }
+
+        /* The Guard has five states:
+           1: Walking - where he walks from one position to another
+           2: Turning - where he turns around and waits a while, before walking in the other direction
+           3: Watching - where he has spottet the player, and keeps an eye on it, while maybe moving a bit.
+           4: Wondering - when the player disappears, and he searches for a bit, before giving up
+           5: Attacking - where he attacks a player (without leaving his station!)
+        */
+
+        var Walking = {
+            enterState() {
+                console.log("guard WALKING");
+            },
+
+            move() {
+                // check if can see player
+                if( self.canSee( player ) ) {
+                    console.log("I see you!");
+                    self.currentState = Watching;
+                } else
+
+                // if he can move - continue to move - else, change state
+                if( !self.moveInDirection() ) {
+                    // console.log("Can't move further");
+                    self.currentState = Turning;
+                }
+            }
+        }
+
+        var Turning = {
+            counter: 0,
+
+            enterState() {
+                console.log("guard TURNING");
+                // change direction
+                // TODO: ask self to turn 180 deg
+                if( self.direction == "left") {
+                    self.turn("right");
+                } else {
+                    self.turn("left");
+                }
+                // start counter
+                this.counter = 0;
+            },
+
+            move() {
+                // increment counter
+                this.counter++;
+
+                // TODO: Make turning slower, and spot player while turning!
+
+                // check if can see player
+                if( self.canSee( player ) ) {
+                    console.log("I see you!");
+                    self.currentState = Watching;
+                } else
+
+                if( this.counter > game.FPS*.750 ) {
+                    // done waiting - go back to walking
+                    // console.log("Walk again");
+                    self.currentState = Walking;
+                }
+            }
+        }
+
+        var Watching = {
+
+            enterState() {
+                console.log("guard WATCHING");
+            },
+
+            move() {
+                let angle = Math.atan2(player.y-self.y, player.x-self.x) * 180/Math.PI;
+                let dist = Math.hypot(player.y-self.y, player.x-self.x);
+
+                // if we don't look directly at the player, rotate until we do
+                let old_rotation = self.rotation;
+                self.rotateTowards(angle,3);
+                let isTurning = self.rotation == old_rotation;
+
+                // if we are close enough - go to attack-mode
+                if( dist < 50 ) {
+                    self.currentState = Attacking;
+                } else {
+
+                    // make sure the direction is pointing to the player
+                    if( Math.abs(angle) > 90 ) { // we should move left
+                        self.direction = "left";
+                    } else {
+                        self.direction = "right";
+                    }
+
+                    // check if can move closer to player, without losing sight
+                    let xoff = (self.direction=="left"?-self.speed:(self.direction=="right"?self.speed:0));
+                    let yoff = (self.direction=="up"?-self.speed:(self.direction=="down"?self.speed:0));
+
+                    // NOTE: If I don't test for both offset and offset*2, I risk flickering back and forth ...
+                    // I don't really understand why ...
+                    if( canMoveTo(this, self.x+xoff, self.y+yoff) && self.canSee(player,xoff,yoff) && self.canSee(player,xoff*2,yoff*2) ) {
+                        self.moveInDirection();
+                    }
+                }
+
+                if(!isTurning && !self.canSee(player)) {
+                    console.log("Where did you go?");
+                    self.currentState = Wondering;
+                }
+            }
+        }
+
+        var Wondering = {
+
+            counter: 0,
+            subcounter: 0,
+            substate: null,
+
+            enterState() {
+                console.log("guard WONDERING");
+                // remember the last direction
+                this.lastDirection = self.direction;
+                if( this.lastDirection == "left") {
+                    this.otherDirection = "right";
+                } else {
+                    this.otherDirection = "left";
+                }
+
+                this.counter = 0;
+            },
+
+            move() {
+                this.counter++;
+
+                // if we suddenly see the player, go back to watching
+                if( self.canSee(player) ) {
+                    console.log("Oh, there you are");
+                    self.currentState = Watching;
+                } else if( this.counter > game.FPS*5 ) { // wonder for max 5 seconds
+                    // done waiting - go back to walking
+                    console.log("Walk again");
+
+                    if( this.lastDirection == "left") {
+                        self.turn("left");
+                    } else {
+                        self.turn("right");
+                    }
+
+                    self.currentState = Walking;
+                } else {
+
+                    // The wondering-state has three substates:
+                    // 1: moving, where the guard moves randomly around
+                    // 2: rotating, where the guard rotate to a random direction
+                    // 3: standing, where the guard does absolutely nothing
+
+                    function moving() {
+                        if( !self.moveInDirection() ) {
+                            if(self.direction == this.lastDirection ) {
+                                self.direction = this.otherDirection;
+                            } else {
+                                self.direction = this.lastDirection;
+                            }
+                        } else {
+                            this.substate = null;
+                        }
+                    }
+
+                    function rotating() {
+                        self.rotation-= this.rotatedir;
+                    }
+
+                    function standing() {
+                        // do nothing
+                    }
+
+                    if( this.substate == null ) {
+                        // select a random substate
+                        let rnd = Math.random();
+                        if( rnd < .5 ) {
+                            this.substate = moving;
+                        } else if( rnd <.75) {
+                            this.substate = rotating;
+                            this.rotatedir = Math.sign(Math.random()-.5);
+                        } else {
+                            this.substate = standing;
+                        }
+
+                        this.subcounter = Math.floor(Math.random()*game.FPS*.5);
+                    } else {
+                        // do current sub-state
+                        this.substate();
+
+                        this.subcounter--;
+                        if( this.subcounter <= 0 ) {
+                            this.substate = null;
+                        }
+                    }
+                }
+            }
+        }
+
+        var Attacking = {
+            enterState() {
+                console.log("guard ATTACKING");
+                this.taze(true);
+            },
+
+            taze(on) {
+                self.tazer.visible = on;
+            },
+
+            move() {
+                let angle = Math.atan2(player.y-self.y, player.x-self.x) * 180/Math.PI;
+                let dist = Math.hypot(player.y-self.y, player.x-self.x);
+
+                // make sure we face the player at all times
+                let isTurning = self.rotateTowards(angle,3);
+
+                if( dist < 50 ){
+                    this.taze(true);
+                } else if( dist > 64 ) {
+                    this.taze(false);
+                    self.currentState = Watching;
+                }
+
+                if( self.rotation==angle && !self.canSee(player) ) {
+                    console.log("Stop attacking - he is gone ...");
+                    this.taze(false);
+                    self.currentState = Wondering;
+                }
+            }
+        }
+
+        this.currentState = Walking;
+
+    }
+
+    move() {
+        this.currentState.move();
+    }
+
+}
+
+
 
 class Patroller extends Enemy {
     constructor( pattern ) {
@@ -400,7 +688,14 @@ class Hunter extends Enemy {
                                 // test that this neighbour isn't in the closedList
                                 if( closedList.indexOf(neighbour) == -1 ) {
                                     // calculate the score 'g'
-                                    let gScore = current.g + 1; // +1 the node distance (should really be grid-distance - TODO: fix)
+                                    // g should be the distance between current and this neighbour
+                                    let xdist = Math.abs( current.x - neighbour.x );
+                                    let ydist = Math.abs( current.y - neighbour.y );
+                                    // The distance is always a 90degree angle
+
+                                    // TODO: Doors create more weight - so maybe they should be added
+
+                                    let gScore = current.g + Math.max(xdist,ydist);
                                     let gScoreIsBest = false;
 
                                     // if this neighbour isn't in the openlist,
@@ -512,17 +807,6 @@ class Hunter extends Enemy {
         this.currentState = ScanForPrey;
 
 
-    }
-
-    set currentState( state ) {
-        this._currentState = state;
-        if( this.currentState.enterState ) {
-            this.currentState.enterState();
-        }
-    }
-
-    get currentState( ) {
-        return this._currentState;
     }
 
 

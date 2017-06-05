@@ -217,7 +217,7 @@ class Door extends Tile {
         thisdoor.gotoAndPlay(this.color + "door_opening");
 
         function opened() {
-            console.log("Door is opened");
+            // console.log("Door is opened");
             thisdoor.removeEventListener("animationend", opened);
             thisdoor.closed = false;
         }
@@ -234,19 +234,19 @@ class Door extends Tile {
 
     walkOn(object,xoffset,yoffset) {
         if( this.closed && xoffset+object.w/2> 20 && xoffset-object.w/2 < 64-20 ) {
-            console.log("try to open door");
+            // console.log("try to open door");
             if(!this.locked) {
-                console.log("Unlocked - just open it")
+                // console.log("Unlocked - just open it")
                 // run open animation
                 this.open();
             } else {
                 // locked - try to unlock it
-                console.log("Locked - try to unlock");
+                // console.log("Locked - try to unlock");
                 let key = object.getItem("key");
                 if( key ) {
                     object.useItemOn(key, this);
                     this.locked = false;
-                    console.log("Unlocked door with key");
+                    // console.log("Unlocked door with key");
                     this.open();
                 } else {
                     console.log("need a key to unlock this door");

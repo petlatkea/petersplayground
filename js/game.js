@@ -1,6 +1,7 @@
 window.addEventListener('load', pageLoaded);
 
 var game = {
+    FPS: 60,
     playing: false,
     running: false,
     stage: null,
@@ -70,6 +71,9 @@ function gameLoaded() {
             "key": [11],
             "shot_double": [1],
             "shot_single": [2],
+            "electricity": {
+              "frames": [3,4,5]
+            },
             "hunter_neutral": [20],
             "hunter_searching": {
                 "frames": [25,26,27,28,29,28,27,26]
@@ -89,7 +93,7 @@ function initGame() {
     window.addEventListener("keydown", keyPressed);
     window.addEventListener("keyup", keyReleased);
 
-    game.level = 6;
+    game.level = 0;
 
     createPlayer();
 
@@ -154,7 +158,7 @@ function createStage() {
     game.stage.width = canvas.width;
     game.stage.height = canvas.height;
 
-    createjs.Ticker.setFPS(60);
+    createjs.Ticker.setFPS(game.FPS);
     createjs.Ticker.on("tick", ticker);
 }
 
@@ -195,7 +199,13 @@ function buildLevel( level ) {
     shots = [];
 
     setPlayerStart( level );
+
+    // Debugging
+    dots = new createjs.Graphics();
+    game.stage.addChild( new createjs.Shape(dots));
 }
+
+var dots = null;
 
 function setPlayerStart( level ) {
     // Find the first Entry object in the tiles - position the player there
@@ -329,8 +339,8 @@ function createItems( level ) {
 
 
 function getTileAtPixels( xpos, ypos ) {
-    x = Math.floor(x/64);
-    y = Math.floor(y/64);
+    x = Math.floor(xpos/64);
+    y = Math.floor(ypos/64);
 
     return getTileAt(x,y);
 }
