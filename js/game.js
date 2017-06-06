@@ -170,6 +170,8 @@ function createPlayer() {
 
 
 function startGame() {
+    game.stage.removeAllChildren();
+
     buildLevel( game.level );
 
     game.stage.addChild( player);
