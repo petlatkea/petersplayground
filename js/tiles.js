@@ -25,6 +25,10 @@ function createTile(type) {
             tile = new Floor({12:"NS",13:"EW",14:"ESW",15:"NEW",16:"ES",17:"SW",
                               23:"NESW",24:"NES",25:"NSW",26:"NE",27:"NW"}[type]);
                  break;
+        // active floor - with light
+        case 28:
+            tile = new FloorLight();
+            break;
         // plain walls
         case 31: tile = new Wall();
             break;
@@ -114,6 +118,10 @@ class Tile extends createjs.Sprite {
     walkOn(object,xoffset, yoffset) {
         // nothing usually happens here - implement function in subclasses, if necessary
     }
+
+    walkOff(object,xoffset, yoffset) {
+        // called whenever an object leaves this tile
+    }
 }
 
 class Space extends Tile {
@@ -133,6 +141,52 @@ class Floor extends Tile {
         this.walkable = true;
     }
 }
+
+class FloorLight extends Tile {
+    constructor() {
+        super("floor_light_off");
+        this.turnedOn = false;
+
+        // keep track on all the objects on this tile
+        this.objectsOn = [];
+
+        this.walkable = true;
+    }
+
+    turnOn() {
+        this.turnedOn = true;
+        this.gotoAndStop("floor_light_on");
+    }
+
+    turnOff() {
+        this.turnedOn = false;
+        this.gotoAndStop("floor_light_off");
+    }
+
+    // Walk on - something happens!
+    walkOn(object,xoffset, yoffset) {
+        if( xoffset > 4 && xoffset < 60 && yoffset > 4 && yoffset < 60) {
+
+            if( this.objectsOn.indexOf(object) == -1 ) {
+                this.objectsOn.push(object);
+            }
+
+            if(!this.turnedOn) {
+                this.turnOn();
+            }
+        }
+    }
+
+    walkOff(object,xoffset, yoffset) {
+        this.objectsOn.splice(this.objectsOn.indexOf(object),1);
+        // only turn off, if all objects on the tile has gone
+        if( this.turnedOn && this.objectsOn.length == 0) {
+            this.turnOff();
+        }
+    }
+
+}
+
 
 class Wall extends Tile {
     constructor(direction) {

@@ -18,6 +18,9 @@
         "floor_NE":[16],
         "floor_NW":[17],
 
+        "floor_light_off": [18],
+        "floor_light_on": [19],
+
         "wall":[21],
 
         "wall_ES":[10],
@@ -70,7 +73,3 @@
     },
     "framerate": 10
 }
-
-
-
-

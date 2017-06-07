@@ -380,11 +380,25 @@ function movedTo(object, xpos, ypos) {
     let topTile = Math.floor((ypos-object.h/2)/64);
     let bottomTile = Math.floor((ypos+object.h/2)/64);
 
+    let oldTiles = object.tiles;
+    object.tiles = [];
+
     for( let x=leftTile; x <= rightTile; x++ ) {
         for( let y=topTile; y <= bottomTile; y++ ) {
             let tile = getTileAt(x,y);
             tile.walkOn(object, xpos-tile.x, ypos-tile.y );
+            object.tiles.push(tile);
         }
+    }
+
+    // track changes to tiles
+    if( oldTiles ) {
+        oldTiles.forEach( tile => {
+            // if this tile doesn't exist in the new array, we have left a tile
+            if(object.tiles.indexOf(tile) == -1) {
+                tile.walkOff(object, xpos-tile.x, ypos-tile.y);
+            }
+        })
     }
 }
 
