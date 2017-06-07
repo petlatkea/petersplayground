@@ -29,6 +29,18 @@ function createTile(type) {
         case 28:
             tile = new FloorLight();
             break;
+
+        // uni-directional floors
+        case 39: tile = new FloorOnlyLeft();
+            break;
+        case 49: tile = new FloorOnlyRight();
+            break;
+        case 59: tile = new FloorOnlyUp();
+            break;
+        case 69: tile = new FloorOnlyDown();
+            break;
+
+
         // plain walls
         case 31: tile = new Wall();
             break;
@@ -388,5 +400,48 @@ class P24Top extends Tile {
      }
     canWalkOn(object,xoffset,yoffset) {
         return yoffset-object.h/2>24;
+    }
+}
+
+/* ***** Uni-directional types ***** */
+class FloorOnlyLeft extends Tile {
+    constructor() {
+        super("floor_only_left");
+    }
+
+    canWalkOn(object,xoffset,yoffset) {
+
+        return xoffset <= object.x-this.x;
+    }
+}
+
+
+class FloorOnlyRight extends Tile {
+    constructor() {
+        super("floor_only_right");
+    }
+
+    canWalkOn(object,xoffset,yoffset) {
+        return xoffset >= object.x-this.x;
+    }
+}
+
+class FloorOnlyUp extends Tile {
+    constructor() {
+        super("floor_only_up");
+    }
+
+    canWalkOn(object,xoffset,yoffset) {
+        return yoffset <= object.y-this.y;
+    }
+}
+
+class FloorOnlyDown extends Tile {
+    constructor() {
+        super("floor_only_down");
+    }
+
+    canWalkOn(object,xoffset,yoffset) {
+        return yoffset >= object.y-this.y;
     }
 }

@@ -21,6 +21,11 @@
         "floor_light_off": [18],
         "floor_light_on": [19],
 
+        "floor_only_left": [29],
+        "floor_only_right": [39],
+        "floor_only_up": [49],
+        "floor_only_down": [59],
+
         "wall":[21],
 
         "wall_ES":[10],

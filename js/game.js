@@ -31,9 +31,9 @@ function createPreloader() {
     game.q.on("complete", gameLoaded);
 
     game.q.loadManifest([
-        "js/sprites.js",
-        "js/enemies.js",
-        "js/tiles.js",
+//        "js/sprites.js",
+//        "js/enemies.js",
+//        "js/tiles.js",
         {id:"tilesprites", src: "tiles.json", type:"spritesheet"},
         {id:"sprites", src: "sprites-01.png"},
         {id:"levels", src: "levels.json"}

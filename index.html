@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,6 +18,9 @@
 
     <script src="js/createjs-2015.11.26.min.js"></script>
     <script src="js/game.js"></script>
+    <script src="js/sprites.js"></script>
+    <script src="js/enemies.js"></script>
+    <script src="js/tiles.js"></script>
 </head>
 
 <body>
@@ -24,47 +28,51 @@
     <canvas id="canvas" width="1088" height="704"></canvas>
 
     <h1>This is my playground</h1>
-    <p><b>Peter's Playground</b> isn't really a game, but all the components of a game, doing their best to look and feel like a game. Maybe you can think of it a bit like Garry's Mod, it is sort of an engine, not an editor, but a collections of levels I've made with the engine.<br>
-    I'm trying to develop a 2D Tile Based game engine, and this is it.<br>
-    Each level illustrates the next bit of work I'm doing, so earlier levels have bad AI, and later levels have more features.
+    <p><b>Peter's Playground</b> isn't really a game, but all the components of a game, doing their best to look and feel like a game. Maybe you can think of it a bit like Garry's Mod, it is sort of an engine, not an editor, but a collections of levels I've made with the engine.<br> I'm trying to develop a 2D Tile Based game engine, and this is it.<br> Each level illustrates the next bit of work I'm doing, so earlier levels have bad AI, and later levels have more features.
     </p>
     <p>You can choose the levels directly by clicking their name:</p>
     <ol class="levels">
         <li><b>Back and forth</b><br>
             <i>A simple guard moves back and forth in front of a key-card, that you need to exit the level.</i>
             <p>
-                Apart from everything basic with tiles and movement, collisions and exit, I wanted to make tiles that weren't entirely unwalkable, thus the thin walls, and I wanted doors that would keep you from moving through when they were closed.</p><p> Keywords: guard, key-card, doors, partly walkable tiles.</p>
+                Apart from everything basic with tiles and movement, collisions and exit, I wanted to make tiles that weren't entirely unwalkable, thus the thin walls, and I wanted doors that would keep you from moving through when they were closed.</p>
+            <p> Keywords: guard, key-card, doors, partly walkable tiles.</p>
         </li>
 
         <li><b>Simple patterns</b><br>
             <i>A couple of guards move around in fixed patterns</i>
             <p>
-                I wanted a more advanced guard that could move from one position to the next, and not just back and forth.</p><p> Keywords: patroller, pattern, fixed movement.</p>
+                I wanted a more advanced guard that could move from one position to the next, and not just back and forth.</p>
+            <p> Keywords: patroller, pattern, fixed movement.</p>
         </li>
 
         <li><b>Maze</b><br>
             <i>A single guard patrols the maze in a complex pattern</i>
             <p>
-                While it might look like a maze, it is just a room with a lot of walls, and the guard runs a fixed pattern, exactly the same as before. I spent more work creating better looking wall-tiles for all the connected walls.</p><p> Keywords: patroller, complex pattern.</p>
+                While it might look like a maze, it is just a room with a lot of walls, and the guard runs a fixed pattern, exactly the same as before. I spent more work creating better looking wall-tiles for all the connected walls.</p>
+            <p> Keywords: patroller, complex pattern.</p>
         </li>
 
         <li><b>Open Space</b><br>
             <i>An open space with three drones moving closer and closer</i>
             <p>
-                This enemy, the Chaser, tries to hit the player. It can only move in 90 degree angles, and it simply turns in the direction of the player.</p><p>Keywords: chaser, AI</p>
+                This enemy, the Chaser, tries to hit the player. It can only move in 90 degree angles, and it simply turns in the direction of the player.</p>
+            <p>Keywords: chaser, AI</p>
         </li>
 
         <li><b>Take Cover</b><br>
             <i>An open space with some walls, and sentrys that tries to shoot you</i>
             <p>
-                I wanted an enemy that could "see" where you are, and turn in any direction. The sentry can see through walls, but the bullets can't move through them. The interesting thing is that the sentry doesn't really have a cone of sight, it calculated the angle between it and the player, and if the current rotation is the same (+/-5), it fires a shot. Took me longer to figure delayed shots, than the angle-calculation.</p><p> Keywords: Sentry, angle between characters, auto-fire, line of sight.
+                I wanted an enemy that could "see" where you are, and turn in any direction. The sentry can see through walls, but the bullets can't move through them. The interesting thing is that the sentry doesn't really have a cone of sight, it calculated the angle between it and the player, and if the current rotation is the same (+/-5), it fires a shot. Took me longer to figure delayed shots, than the angle-calculation.</p>
+            <p> Keywords: Sentry, angle between characters, auto-fire, line of sight.
             </p>
         </li>
 
         <li><b>Labyrinth</b><br>
             <i>A maze with walls and blocked corridors - two enemies travel around the maze</i>
             <p>
-                The earlier patroller moved in a fixed pattern, no matter what the map suggested. This one has fix-points (nodes) at every intersection, where a choice can be made. Every time a traveller comes to an intersection, it chooses a random direction (but not the one it came from, unless that is the only option).<br> The enemies require a nodegraph of the map, and so far, it has to be constructed manually.</p><p> Keywords: Traveller, nodegraph, random movement, select direction.
+                The earlier patroller moved in a fixed pattern, no matter what the map suggested. This one has fix-points (nodes) at every intersection, where a choice can be made. Every time a traveller comes to an intersection, it chooses a random direction (but not the one it came from, unless that is the only option).<br> The enemies require a nodegraph of the map, and so far, it has to be constructed manually.</p>
+            <p> Keywords: Traveller, nodegraph, random movement, select direction.
             </p>
         </li>
 
@@ -72,7 +80,7 @@
             <i>Still a maze, but with doors in some corridors</i>
             <p>
                 I discovered that enemies went through doors perfectly, so wanted to make a maze, where you could outrun an enemy, if it had to wait for doors to open. Also the enemy is a more intelligent Hunter - it has a simple statemachine, where it is either searching or hunting. When searching it moves randomly, like the traveller, but at every intersection, it scans its' surroundings, and if it detects the player, plans a route to him, and changes into hunting-mode. When hunting it simplt follows the planned route. It cannot see the player, and don't know how to hurt him. It was mainly the routeplanning I wanted this level to demonstrate.</p>
-                <p>Keywords: Hunter, nodegraph, shortest route, A* algorithm.</p>
+            <p>Keywords: Hunter, nodegraph, shortest route, A* algorithm.</p>
 
         </li>
 
@@ -81,7 +89,17 @@
             <p>
                 Rather than improving the Hunter, I decided to make the Guard from the first level, a bit more intelligent. He can now see the player (in a view-cone ahead of him). He can't see through walls, so if he has spotted the player, and the player hides behind a wall, he tries to move a bit back and forth, before giving up.<br> The main feature is the line-of-sight expanded into a viewcone, and all characters now have a canSee(other) method they can call. The hardest thing was making the guard <em>not</em> move himself, so the player would be out-of-sight. The Guard2 has a larger statemachine than the Hunter: Either he switches between Walking and Turning, until he spots the player, then he goes Watching, where he rotates and moves, always keeping the player in sight. If the player gets close, he goes into Attack-mode, where he tries to electrocute the player (still without moving away from his post, though). If the player disappears from sight, the guard goes into Wondering-state, where he moves, rotates and waits randomly, before giving up, and goes back to Walking and Turning (unless he spots the player).
             </p>
-             <p>Keywords: View-cone, track player, raycasting.</p>
+            <p>Keywords: View-cone, track player, raycasting.</p>
+
+        </li>
+
+        <li><b>Custom Tiles</b><br>
+            <i>Same guard as before, now there just is some cool light-up floor tiles</i>
+
+            <p>To make interactive tiles, I needed a method for checking if a tile was entered or left by an object, and whether is was free of all objects.<br> The light-up tile is just that - it lights up when anyone steps on it, and turns of when everyone leaves. The guard is just there to have someone else moving.<br>
+            I also wanted some one-directional tiles, and used the same level for testing those.
+            </p>
+            <p>Keywords: Interactive tiles, uni-directional tiles, walkon, walkoff, onenter, onleave.</p>
 
         </li>
 
@@ -91,7 +109,7 @@
 
     <script>
         // select level-li's, and make them eligble for clicking
-        document.querySelectorAll(".levels li b").forEach( (elm, index) => {
+        document.querySelectorAll(".levels li b").forEach((elm, index) => {
             elm.addEventListener("click", function() {
                 game.level = index;
                 startGame();
