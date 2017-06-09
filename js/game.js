@@ -16,6 +16,11 @@ var items = null;
 var shots = null;
 
 function pageLoaded() {
+    // TODO: Initialize game object
+
+    // register keyboard and/or gamepad
+    game.controller = new Controller();
+
     createStage();
 
     createPreloader();
@@ -89,10 +94,6 @@ function gameLoaded() {
 }
 
 function initGame() {
-    // register keyboard
-    window.addEventListener("keydown", keyPressed);
-    window.addEventListener("keyup", keyReleased);
-
     game.level = 0;
 
     createPlayer();
@@ -100,56 +101,152 @@ function initGame() {
     startGame();
 }
 
-/* keys */
+class Controller {
 
-var keys = {
-    left: false,
-    right: false,
-    up: false,
-    down: false,
-    space: false
-};
+    constructor() {
+        this.TYPE_KEYBOARD = { type: "keyboard", index: 0};
+        this.TYPE_GAMEPAD = { type: "gamepad", index: 0};
+
+        this.hasGamePads = false;
+        this.preferredController = this.TYPE_KEYBOARD;
+
+        this.registerEvents();
+
+        // the controls-object always contains the current state of the controls,
+        // from the current preferred controller - they are read in the ticker!
+        this.controls =  {
+            left: false,
+            right: false,
+            up: false,
+            down: false,
+            fire: false
+        }
+    }
 
 
-function keyPressed( event ) {
-//    console.log("keypressed: ", event);
-    if( event.key == "ArrowRight" ) {
-        keys.right = true;
-        event.preventDefault();
-    } else if( event.key == "ArrowLeft" ) {
-        keys.left = true;
-        event.preventDefault();
-    } else if( event.key == "ArrowUp" ) {
-        keys.up = true;
-        event.preventDefault();
-    } else if( event.key == "ArrowDown" ) {
-        keys.down = true;
-        event.preventDefault();
-    } else if( event.key == " ") {
-        keys.space = true;
-        event.preventDefault();
+    registerEvents() {
+        window.addEventListener("keydown", this);
+        window.addEventListener("keyup", this);
+
+        window.addEventListener("gamepadconnected", this);
+        window.addEventListener("gamepaddisconnected", this);
+
+        // scan for gamepads every half second
+        let ctrl = this;
+        setInterval( function() { ctrl.scanForGamePads(); }, 500);
+    }
+
+
+    handleEvent( event ) {
+        switch(event.type) {
+            case "gamepadconnected":
+                // find available gamepads
+                // NOTE: In Chrome, this event is sometimes fired when a gamepad disconnects
+                this.scanForGamePads();
+                break;
+            case "gamepaddisconnected":
+                // find available gamepads, if any
+                this.scanForGamePads();
+                break;
+            case "keydown":
+                this.handleKey(event, true);
+                break;
+
+            case "keyup":
+                this.handleKey(event, false);
+                break;
+        }
+    }
+
+
+    handleKey(event, active) {
+        let preventDefault = true;
+        switch(event.key) {
+            case "ArrowRight":
+                this.controls.right = active;
+                break;
+            case "ArrowLeft":
+                this.controls.left = active;
+                break;
+            case "ArrowUp":
+                this.controls.up = active;
+                break;
+            case "ArrowDown":
+                this.controls.down = active;
+                break;
+            case " ":
+                this.controls.fire = active;
+                break;
+            default:
+                preventDefault = false;
+        }
+        if( preventDefault ) {
+            event.preventDefault();
+            this.preferredController = this.TYPE_KEYBOARD;
+        }
+    }
+
+
+    handleGamepad() {
+        // if the preferred controller is a gamepad, then check that for states
+        // if not, then scan any gamepads for activity, that might make them preferred
+        if( this.preferredController.type == "gamepad" ) {
+            let gamepad = navigator.getGamepads()[this.preferredController.index];
+            if(gamepad) {
+
+                // check axes on this gamepad
+                this.controls.left = gamepad.axes[0] < -0.5;
+                this.controls.right = gamepad.axes[0] > 0.5;
+                this.controls.up = gamepad.axes[1] < -0.5;
+                this.controls.down = gamepad.axes[1] > 0.5;
+
+                // check buttons (only fire-button for now)
+                this.controls.fire = gamepad.buttons[0].pressed;
+
+            } else {
+                // preferred gamepad has been disconnected
+                this.scanForGamePads();
+                this.preferredController = this.TYPE_KEYBOARD;
+            }
+        } else {
+            // no preferred gamepad yet - but if any is active, make it preferred
+            let gamepads = navigator.getGamepads();
+            for (let idx = 0; idx < gamepads.length; idx++) {
+                let gamepad = gamepads[idx];
+                if (gamepad != null) {
+
+                    // scan all the buttons
+                    gamepad.buttons.forEach(button => {
+                        if (button.pressed) {
+                            // this gamepad becomes the preferred one!
+                            this.preferredController = {type: "gamepad", index: idx};
+                        }
+                    });
+                }
+            }
+        }
+    }
+
+
+    // scan for available gamepads, used on events as well as polling
+    scanForGamePads() {
+        this.hasGamePads = false;
+        let foundpads = navigator.getGamepads ? navigator.getGamepads() : [];
+
+        // loop through the pads, if any are not null, then note that we have gamepads!
+        // the foundpads might be an object, so we cant use foreach
+        for(let i=0; i<foundpads.length; i++) {
+            if( foundpads[i] != null ) {
+                this.hasGamePads = true;
+            }
+        }
+
+        if(!this.hasGamePads) {
+            this.preferredController = this.TYPE_GAMEPAD;
+        }
     }
 }
 
-function keyReleased( event ) {
-//    console.log("keyreleased: ", event);
-    if( event.key == "ArrowRight" ) {
-        keys.right = false;
-        event.preventDefault();
-    } else if( event.key == "ArrowLeft" ) {
-        keys.left = false;
-        event.preventDefault();
-    } else if( event.key == "ArrowUp" ) {
-        keys.up = false;
-        event.preventDefault();
-    } else if( event.key == "ArrowDown" ) {
-        keys.down = false;
-        event.preventDefault();
-    } else if( event.key == " ") {
-        keys.space = false;
-        event.preventDefault();
-    }
-}
 
 function createStage() {
     game.stage = new createjs.Stage("canvas");
@@ -341,8 +438,8 @@ function createItems( level ) {
 
 
 function getTileAtPixels( xpos, ypos ) {
-    x = Math.floor(xpos/64);
-    y = Math.floor(ypos/64);
+    let x = Math.floor(xpos/64);
+    let y = Math.floor(ypos/64);
 
     return getTileAt(x,y);
 }
@@ -434,19 +531,23 @@ function removeShot( shot ) {
 
 function ticker( event ) {
 
+    if( game.controller.hasGamePads ) {
+        game.controller.handleGamepad();
+    }
+
     if( game.playing ) {
 
         if( player ) {
             // move player
-            if( keys.left ) {
+            if( game.controller.controls.left ) {
                 player.moveLeft();
-            } else if( keys.right ) {
+            } else if( game.controller.controls.right ) {
                 player.moveRight();
             } else
 
-            if( keys.up ) {
+            if( game.controller.controls.up ) {
                 player.moveUp();
-            } else if( keys.down ) {
+            } else if( game.controller.controls.down ) {
                 player.moveDown();
             } else {
                 // no movement at all
