@@ -95,7 +95,7 @@ function gameLoaded() {
 
 function initGame() {
     game.level = 0;
-
+    createStatus();
     createPlayer();
 
     startGame();
@@ -251,14 +251,108 @@ class Controller {
 function createStage() {
     game.stage = new createjs.Stage("canvas");
 
-    let canvas = document.querySelector("#canvas");
-    game.stage.width = canvas.width;
-    game.stage.height = canvas.height;
-
     createjs.Ticker.setFPS(game.FPS);
     createjs.Ticker.on("tick", ticker);
 }
 
+function createStatus() {
+    const height = 22;
+    const margin = 4;
+
+    const FONT = height + "px bioliquid";
+    const COLOR = "#eae0a7";
+
+    game.status = new createjs.Stage("status");
+    const bottom = game.status.canvas.height;
+
+    // create fixed texts
+    let text = new createjs.Text("Health", FONT, COLOR);
+    text.x = margin;
+    text.y = bottom-margin-height;
+    game.status.addChild(text);
+
+    const left = text.getMeasuredWidth();
+
+    text = new createjs.Text("Items", FONT, COLOR);
+    text.x = 500;
+    text.y = bottom-margin-height;
+    game.status.addChild(text);
+
+    text = new createjs.Text("Level", FONT, COLOR);
+    text.x = 4;
+    text.y = bottom-height*2-margin;
+    game.status.addChild(text);
+
+    text = new createjs.Text("Score", FONT, COLOR);
+    text.x = 500-14;
+    text.y = bottom-height*2-margin;
+    game.status.addChild(text);
+
+    // create dynamic texts
+    let levelNr = new createjs.Text("MM", FONT, "#FFFFFF");
+    levelNr.x = left+height;
+    levelNr.y = bottom-height*2-margin;
+    levelNr.textAlign = "right";
+    game.status.addChild(levelNr);
+
+    let levelName = new createjs.Text("Her WWWWWW", FONT, "#FFFFFF");
+    levelName.x = levelNr.x + levelNr.getMeasuredWidth()-30;
+    levelName.y = levelNr.y;
+    levelName.textAlign = "left";
+    game.status.addChild(levelName);
+
+    let scoreText = new createjs.Text("000008", FONT, "#FFFFFF");
+    scoreText.x = 640-margin;
+    scoreText.y = levelNr.y;
+    scoreText.textAlign = "right";
+    game.status.addChild(scoreText);
+
+    // create healthbar
+    let g = new createjs.Graphics();
+    g.beginLinearGradientFill(["#ff0000","#ffb100","#00ff00"], [0.05, 0.4, 1], 0, 0, 400, 0);
+    let bar = g.rect(0,0,400,height-margin).command;
+    let healthBar = new createjs.Shape(g);
+    healthBar.y = bottom-height;
+    healthBar.x = left+height/2+margin;
+    game.status.addChild(healthBar);
+
+    // store dynamic texts in game-object
+    game.statusTexts = {
+        nr: levelNr,
+        name: levelName,
+        score: scoreText,
+        itemY: bottom-height+10,
+        health: bar
+    };
+
+    createjs.Ticker.on("tick", statusTicker);
+}
+
+function updateStatus() {
+    // update levelNr
+    game.statusTexts.nr.text = game.levels[game.level].nr;
+
+    // update level text
+    game.statusTexts.name.text = game.levels[game.level].name;
+
+    // update items - if any
+    if( player.items ) {
+        player.items.forEach((item,index) => {
+            // if item isn't on any stage, add it to this
+            if(!item.stage) {
+                game.status.addChild(item);
+                item.x = 560 + index*18;
+                item.y = game.statusTexts.itemY;
+            }
+        });
+    }
+
+    // TODO: update score
+
+    // update health (health is 0-100, bar is 0-400)
+    game.statusTexts.health.w = player.health*4;
+
+}
 
 function createPlayer() {
     player = new Player("p_stopped");
@@ -569,7 +663,7 @@ function ticker( event ) {
         if( items ) {
             // check if touching any item
             items.forEach( item => {
-                if( hitTest(player, item) ) {
+                if( item.canPickUp && hitTest(player, item) ) {
                     player.pickUp( item );
                 }
             })
@@ -590,4 +684,10 @@ function ticker( event ) {
 
     // update stage
     game.stage.update( event );
+}
+
+function statusTicker(event) {
+    // update status
+    updateStatus();
+    game.status.update( event );
 }

@@ -61,8 +61,14 @@ class Shot extends Sprite {
             this.x += dx;
             this.y += dy;
 
+            // NOTE: It is important that shots DON'T call movedto, since they don't
+            // influence the floor or walls, only themselves.
+
             // if this shot is outside the canvas - let it die
-            if (this.x + this.w / 2 < 0 || this.y + this.h / 2 < 0 || this.x - this.w / 2 > game.stage.width || this.y - this.h / 2 > game.stage.height) {
+            if (this.x + this.w / 2 < 0
+             || this.y + this.h / 2 < 0
+             || this.x - this.w / 2 > game.stage.getBounds().width
+             || this.y - this.h / 2 > game.stage.getBounds().height) {
                 removeShot(this);
             }
 
@@ -415,18 +421,16 @@ class Item extends StationarySprite {
     constructor(spritename) {
         super(spritename);
         this.type = spritename;
+        this.canPickUp = true;
     }
 
     pickedUp() {
+        this.canPickUp = false;
         console.log("Picked up " + this.type);
         // move outside of stage
-        createjs.Tween.get(this)
-            .to({
-                x: game.stage.getBounds().width,
-                y: game.stage.getBounds().height
-            }, 1000)
-            .call(function () {
-                game.stage.removeChild(this)
+        createjs.Tween.get(this).to({x: 560,y: -this.h*2}, 750).call(function () {
+                // when the item has exited the canvas - remove it
+                game.stage.removeChild(this);
             });
     }
 
@@ -441,6 +445,7 @@ class Player extends MovingSprite {
         this.w = 19;
         this.h = 24;
         this.speed = 3;
+        this.health = 100;
     }
 
     stopMoving() {
@@ -448,6 +453,8 @@ class Player extends MovingSprite {
     }
 
     hitBy(opponent) {
+        // TODO: Make different opponents hurt a different amount
+        this.health--;
         console.log("Auch, I'm hit");
     }
 

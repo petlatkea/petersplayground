@@ -1,0 +1,30 @@
+@font-face {
+	font-family: 'bioliquid';
+	src: url('fonts/bioliquid.woff2') format('woff2'),
+		url('fonts/bioliquid.woff') format('woff');
+	font-weight: normal;
+	font-style: normal;
+}
+
+body {
+    border: 0;
+    padding: 0;
+    margin: 0;
+}
+
+#canvases {
+    font-size: 0;
+}
+
+#status {
+    background-color: black;
+    border-bottom: 2px solid #a80000;
+}
+
+.levels li>b {
+    cursor: pointer;
+}
+
+.levels li>b:hover {
+    background-color: yellow;
+}
