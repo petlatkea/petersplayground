@@ -10,21 +10,65 @@ body {
     border: 0;
     padding: 0;
     margin: 0;
+
+    display: flex;
+    height: 100%;
 }
 
 #canvases {
-    font-size: 0;
+
 }
 
-#status {
+#canvases canvas {
+    display: block;
+}
+
+canvas#status {
     background-color: black;
     border-bottom: 2px solid #a80000;
 }
 
-.levels li>b {
+#info {
+    overflow: scroll;
+    background-color: azure;
+    padding-left: 1em;
+    padding-right: .8em;
+    font-family: 'Slabo 27px', serif;
+    max-height: 100vh;
+}
+
+.levels li {
+    font-weight: bold;
+    font-size: 120%;
+    margin-bottom: 12px;
+    background-color: #d2fff0;
+}
+
+.levels li:hover {
+    background-color: #63ffcb;
+    cursor: help;
+}
+
+.levels li .levelinfo {
+    font-weight: normal;
+    font-size: 85%;
+    font-style: italic;
+}
+.levels li .leveldetail {
+    display: none;
+    font-weight: normal;
+    font-size: 80%;
+}
+
+.levels li .leveldetail .levelkeywords {
+     font-family: monospace;
+}
+
+.levels li .levelname {
     cursor: pointer;
 }
 
-.levels li>b:hover {
-    background-color: yellow;
+.levels li .levelname:hover {
+    background-color: #40c69a;
+    color: white;
 }
