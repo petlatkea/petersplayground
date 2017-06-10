@@ -95,7 +95,9 @@ function gameLoaded() {
 
 function initGame() {
     game.level = 0;
+
     createStatus();
+
     createPlayer();
 
     startGame();
@@ -366,6 +368,9 @@ function startGame() {
     buildLevel( game.level );
 
     game.stage.addChild( player);
+
+    resetCamera();
+
     game.playing = true;
 }
 
@@ -501,9 +506,6 @@ function createEnemies( level ) {
 
 
 
-
-
-
 function createItems( level ) {
     items = [];
 
@@ -622,6 +624,43 @@ function removeShot( shot ) {
     game.stage.removeChild(shot);
 }
 
+// CAMERA
+
+function resetCamera() {
+    game.stage.regX = 0;
+    game.stage.regY = 0;
+}
+
+
+function moveCamera() {
+    const xoffset = player.x-game.stage.regX;
+    const yoffset = player.y-game.stage.regY;
+
+    const xmargin = 192;
+    const ymargin = 192;
+
+    const c_height = game.stage.canvas.height;
+    const s_height = game.stage.getBounds().height;
+
+    const c_width = game.stage.canvas.width;
+    const s_width = game.stage.getBounds().width;
+
+
+    if( xoffset > c_width-xmargin && game.stage.regX <= s_width-c_width-player.speed ) {
+        game.stage.regX+=player.speed;
+    } else if( xoffset < xmargin && game.stage.regX > 0 ) {
+        game.stage.regX-=player.speed;
+    }
+
+
+    if( yoffset > c_height-ymargin && game.stage.regY <= s_height-c_height-player.speed ) {
+        game.stage.regY+=player.speed;
+    } else if( yoffset < ymargin && game.stage.regY > 0) {
+        game.stage.regY-=player.speed;
+    }
+
+}
+
 
 function ticker( event ) {
 
@@ -648,6 +687,8 @@ function ticker( event ) {
                 player.stopMoving();
             }
         }
+
+        moveCamera();
 
         if( enemies ) {
             // move enemies, and test for collisions

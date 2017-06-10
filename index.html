@@ -16,8 +16,8 @@
 <body>
 
     <div id="canvases">
-        <canvas id="status" width="640" height="48"></canvas>
-        <canvas id="canvas" width="1088" height="704"></canvas>
+        <canvas id="status" width="640" height="64"></canvas>
+        <canvas id="canvas" width="640" height="576"></canvas>
     </div>
     <h1>This is my playground</h1>
     <p><b>Peter's Playground</b> isn't really a game, but all the components of a game, doing their best to look and feel like a game. Maybe you can think of it a bit like Garry's Mod, it is sort of an engine, not an editor, but a collections of levels I've made with the engine.<br> I'm trying to develop a 2D Tile Based game engine, and this is it.<br> Each level illustrates the next bit of work I'm doing, so earlier levels have bad AI, and later levels have more features.
@@ -92,6 +92,15 @@
             I also wanted some one-directional tiles, and used the same level for testing those.
             </p>
             <p>Keywords: Interactive tiles, uni-directional tiles, walkon, walkoff, onenter, onleave.</p>
+
+        </li>
+
+        <li><b>Larger than life</b><br>
+        <i>The map can't fit on the screen, so scrolling is inevitable</i>
+
+        <p>To test and provoke scrolling of the screen, I made a map that was larger than the canvas (and shrunk the canvas at the same time).<br>
+        Implementing scrolling is extremely simple - it isn't scrolling per se, but more like moving a camera around. And it is done purely by changing the regX and regY of the stage.</p>
+        <p>Keywords: scrolling, camera-movement, stage.regX</p>
 
         </li>
 
