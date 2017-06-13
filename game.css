@@ -28,6 +28,10 @@ canvas#status {
     border-bottom: 2px solid #a80000;
 }
 
+canvas#canvas {
+    background-color: #000000;
+}
+
 #info {
     overflow: scroll;
     background-color: azure;

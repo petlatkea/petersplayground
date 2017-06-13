@@ -367,6 +367,8 @@ function startGame() {
 
     buildLevel( game.level );
 
+    buildStars();
+
     game.stage.addChild( player);
 
     resetCamera();
@@ -404,6 +406,102 @@ function buildLevel( level ) {
 }
 
 var dots = null;
+
+
+var starfields = [];
+
+function buildStars() {
+    // Big part of the starfield code is inspired by:
+    // https://www.igorkromin.net/index.php/2013/05/13/generate-a-nice-looking-star-field-with-easeljs-and-html5-canvas/
+    // especially the size-decision
+
+    // create star-container for all star-fields
+    let container = new createjs.Container();
+
+    let speeds = [.1,.05,.02,.01];
+
+    // create 4 star fields (Shape), and add them to the container
+    for( let i=0; i<4; i++ ) {
+        starfields[i] = new createjs.Shape();
+        starfields[i].speed = speeds[i];
+        container.addChild(starfields[i]);
+    }
+
+    // create stars, position them randomly on the 4 fields
+    const s_width = Math.max(game.stage.getBounds().width, game.stage.canvas.width);
+    const s_height = Math.max(game.stage.getBounds().height, game.stage.canvas.height);
+
+    // create 5 stars pr tile
+    let count = s_width/64 * s_height/64 *5;
+    console.log("Create %d stars", count);
+
+    // different random colors
+    let colors = ["#d3e6ff", "#ffffff", "#fff28b", "#c7f4fa", "#9eb3e3"];
+
+    for( let i=0; i <count; i++) {
+        let type = Math.floor(Math.random()*4);
+
+        let sizecat = Math.random();
+        let size = 3;
+        if( sizecat < .9 ) {
+            // small
+            size = 1+Math.random()*3;
+        } else {
+            // large
+            size = 3 + Math.random()*4;
+            // large stars are always the slowest type
+            type = speeds.length-1;
+        }
+
+        // create each star as a polystar
+        starfields[type].graphics.beginFill(colors[Math.floor(Math.random()*colors.length)]).drawPolyStar(
+            Math.random()*(s_width-size),
+            Math.random()*(s_height-size),
+            size,
+            5 + Math.round(Math.random() * 2), // number of sides
+            0.9, // pointyness
+            Math.random() * 360 // rotation of the star
+        );
+    }
+
+    // remember the current size of the starfields
+    let bounds = container.getBounds();
+
+    // before adding their clones next to them ...
+    for( let i=0; i<4; i++ ) {
+        // cache
+        starfields[i].cache(0,0, s_width, s_height);
+
+        // create clone
+        starfields[i].myclone = starfields[i].clone(false);
+        starfields[i].myclone.x = starfields[i].getBounds().width;
+        container.addChild(starfields[i].myclone);
+    }
+
+    container.setBounds(bounds);
+
+    // add the starfields before anything else
+    game.stage.addChildAt(container,0);
+}
+
+function moveStars() {
+    const s_width = Math.max(game.stage.getBounds().width, game.stage.canvas.width);
+    const s_height = Math.max(game.stage.getBounds().height, game.stage.canvas.height);
+
+    // move starfields at their individual speeds
+    starfields.forEach( starfield => {
+        starfield.x-=starfield.speed;
+        starfield.myclone.x-=starfield.speed;
+        if( starfield.x < -s_width ) {
+            starfield.x = s_width;
+        }
+        if( starfield.myclone.x < -s_width ) {
+            starfield.myclone.x = s_width;
+        }
+
+    })
+}
+
 
 function setPlayerStart( level ) {
     // Find the first Entry object in the tiles - position the player there
@@ -721,7 +819,10 @@ function ticker( event ) {
             });
         }
 
+        moveStars();
     }
+
+
 
     // update stage
     game.stage.update( event );
