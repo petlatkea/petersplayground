@@ -2,8 +2,8 @@ function createTile(type) {
     var tile = null;
 
     // NOTE: The numbers used here are LEVEL-design numbers.
-    //       They are not necessarily identical to the sprite-positions
-    //       eventhough most of them fit the same pattern.
+    //       They are not sprite-positions, and given the improved spritesheet,
+    //       they hardly ever match, so please don't expect them to
     switch(type) {
         case 10: tile = new Space();
                  break;
@@ -22,7 +22,7 @@ function createTile(type) {
         case 25:
         case 26:
         case 27:
-            tile = new Floor({12:"NS",13:"EW",14:"ESW",15:"NEW",16:"ES",17:"SW",
+            tile = new Road({12:"NS",13:"EW",14:"ESW",15:"NEW",16:"ES",17:"SW",
                               23:"NESW",24:"NES",25:"NSW",26:"NE",27:"NW"}[type]);
                  break;
         // active floor - with light
@@ -116,12 +116,47 @@ function createTile(type) {
     return tile;
 }
 
-class Tile extends createjs.Sprite {
-    constructor( spritename ) {
-        super(game.tiles, spritename);
-        this.type = spritename;
+class Tile extends createjs.SpriteContainer {
+    constructor(basic, overlay) {
+        super(game.tiles);
+
+        // create basic sprite
+        this.sprite = new createjs.Sprite(this.spriteSheet, basic);
+        this.addChild(this.sprite);
+        this.type = basic;
+
+        // create overlay if specified
+        if( overlay ) {
+            this.overlay = new createjs.Sprite(this.spriteSheet, overlay);
+            this.addChild(this.overlay);
+            this.type = overlay;
+        }
+
         this.walkable = true;
     }
+
+    // helper method for rotating overlay
+    rotate(direction) {
+        let rotation = direction;
+        switch(direction) {
+            case "left": rotation = 180;
+                break;
+            case "right": rotation = 0;
+                break;
+            case "up": rotation = -90;
+                break;
+            case "down": rotation = 90;
+                break;
+        }
+
+        this.overlay.regX = 32;
+        this.overlay.regY = 32;
+        this.overlay.x = 32;
+        this.overlay.y = 32;
+        this.overlay.rotation = rotation;
+
+    }
+
 
     canWalkOn(object,xoffset,yoffset) {
         return this.walkable;
@@ -134,6 +169,44 @@ class Tile extends createjs.Sprite {
     walkOff(object,xoffset, yoffset) {
         // called whenever an object leaves this tile
     }
+
+    // decorator-methods for sprite-handling
+    // handles the overlay by default (if it exists)
+    gotoAndPlay( frameOrAnimation ) {
+        if( this.overlay ) {
+            this.overlay.gotoAndPlay(frameOrAnimation);
+        } else {
+            this.sprite.gotoAndPlay(frameOrAnimation);
+        }
+    }
+
+    gotoAndStop( frameOrAnimation ) {
+        if( this.overlay ) {
+            this.overlay.gotoAndStop(frameOrAnimation);
+        } else {
+            this.sprite.gotoAndStop(frameOrAnimation);
+        }
+    }
+
+    addEventListener(type, listener, useCapture) {
+        super.addEventListener(type, listener, useCapture);
+        if(this.overlay) {
+            this.overlay.addEventListener(type,listener,useCapture);
+        } else {
+            this.sprite.addEventListener(type,listener,useCapture);
+        }
+    }
+
+    removeEventListener(type, listener, useCapture) {
+        super.removeEventListener(type, listener, useCapture);
+        if(this.overlay) {
+            this.overlay.removeEventListener(type,listener,useCapture);
+        } else {
+            this.sprite.removeEventListener(type,listener,useCapture);
+        }
+    }
+
+
 }
 
 class Space extends Tile {
@@ -144,19 +217,67 @@ class Space extends Tile {
 }
 
 class Floor extends Tile {
-    constructor(direction) {
+    constructor(type) {
         let spritename = "floor";
-        if(direction) {
-            spritename+="_"+direction;
+        if(type) {
+            spritename+="_"+type;
         }
         super(spritename);
         this.walkable = true;
     }
 }
 
+class Road extends Tile {
+    constructor(direction) {
+        let spritename = direction;
+        let rotation = 0;
+        switch (direction) {
+            case "NS":
+                break;
+            case "EW":
+                rotation = 90;
+                break;
+            case "ESW":
+                rotation = 90;
+                break;
+            case "NEW":
+                rotation = -90;
+                break;
+            case "NSW":
+                rotation = 180;
+                break;
+            case "NES":
+                rotation = 0;
+                break;
+            case "ES": rotation = 0;
+                break;
+            case "SW":
+                rotation = 90;
+                break;
+            case "NE":
+                rotation = -90;
+                break;
+            case "NW":
+                rotation = 180;
+                break;
+            case "NESW":
+                rotation = 0;
+                break;
+
+        }
+
+        spritename = "road_"+spritename;
+
+        // create basic floor and road-pattern
+        super("floor", spritename);
+        // rotate pattern in the desired direction
+        this.rotate(rotation);
+    }
+}
+
 class FloorLight extends Tile {
     constructor() {
-        super("floor_light_off");
+        super("floor", "floor_light_off");
         this.turnedOn = false;
 
         // keep track on all the objects on this tile
@@ -213,7 +334,7 @@ class Wall extends Tile {
 
 class Entry extends Tile {
     constructor() {
-        super("entry");
+        super("floor", "entry");
     }
 
     canWalkOn(object,xoffset,yoffset) {
@@ -229,7 +350,7 @@ class Entry extends Tile {
 
 class Exit extends Tile {
     constructor( type ) {
-        super("exit");
+        super("floor", "exit");
         this.triggered = false;
     }
 
@@ -254,7 +375,7 @@ class Exit extends Tile {
 
 class Door extends Tile {
     constructor( color, state="closed", type="keep" ) {
-        super( color + "door_" + state);
+        super("floor", color + "door_" + state);
 
         if( color == "blue" ) {
             this.locked = false;
@@ -269,10 +390,8 @@ class Door extends Tile {
 
     canWalkOn(object,xoffset,yoffset) {
         let canWalk = false;
-        if( yoffset-object.h/2>8 && yoffset+object.h/2<64-8 ) {
-            if( !this.closed || xoffset+object.w/2<28 || xoffset-object.w/2>34 ) {
-                canWalk = true;
-            }
+        if( !this.closed || xoffset+object.w/2<28 || xoffset-object.w/2>34 ) {
+            canWalk = true;
         }
         return canWalk;
     }
@@ -335,10 +454,9 @@ class Door extends Tile {
 /* ***** P24 series ***** */
 /* These tiles are mostly walkable, but have a 24 pixel wall somewhere on them */
 
-
 class P24TopLeftCorner extends Tile {
      constructor( type ) {
-         super("P24_ES");
+         super("floor", "P24_ES");
      }
 
     canWalkOn(object,xoffset,yoffset) {
@@ -348,7 +466,7 @@ class P24TopLeftCorner extends Tile {
 
 class P24BottomLeftCorner extends Tile {
     constructor( type ) {
-         super("P24_NE");
+         super("floor", "P24_NE");
      }
     canWalkOn(object,xoffset,yoffset) {
         return xoffset-object.w/2>24 && yoffset+object.h/2<64-24;
@@ -357,7 +475,7 @@ class P24BottomLeftCorner extends Tile {
 
 class P24TopRightCorner extends Tile {
     constructor( type ) {
-         super("P24_SW");
+         super("floor", "P24_SW");
      }
     canWalkOn(object,xoffset,yoffset) {
         return xoffset+object.w/2<40 && yoffset-object.h/2>24;
@@ -366,7 +484,7 @@ class P24TopRightCorner extends Tile {
 
 class P24BottomRightCorner extends Tile {
     constructor( type ) {
-         super("P24_NW");
+         super("floor", "P24_NW");
     }
 
     canWalkOn(object,xoffset,yoffset) {
@@ -374,10 +492,9 @@ class P24BottomRightCorner extends Tile {
     }
 }
 
-
 class P24TopLeft extends Tile {
     constructor() {
-         super("P24_W_N");
+         super("floor", "P24_W_N");
     }
 
     canWalkOn(object,xoffset,yoffset) {
@@ -387,8 +504,9 @@ class P24TopLeft extends Tile {
 
 class P24TopRight extends Tile {
     constructor() {
-         super("P24_E_N");
-     }
+         super("floor","P24_E_N");
+         this.overlay.x = 40;
+    }
     canWalkOn(object,xoffset,yoffset) {
         return xoffset+object.w/2<40 || yoffset-object.h/2>32;
     }
@@ -396,7 +514,7 @@ class P24TopRight extends Tile {
 
 class P24Top extends Tile {
     constructor() {
-         super("P24_N_EW");
+         super("floor", "P24_N_EW");
      }
     canWalkOn(object,xoffset,yoffset) {
         return yoffset-object.h/2>24;
@@ -406,19 +524,19 @@ class P24Top extends Tile {
 /* ***** Uni-directional types ***** */
 class FloorOnlyLeft extends Tile {
     constructor() {
-        super("floor_only_left");
+        super("floor", "floor_only_left");
+        this.rotate("left");
     }
 
     canWalkOn(object,xoffset,yoffset) {
-
         return xoffset <= object.x-this.x;
     }
 }
 
-
 class FloorOnlyRight extends Tile {
     constructor() {
-        super("floor_only_right");
+        super("floor", "floor_only_right");
+        this.rotate("right");
     }
 
     canWalkOn(object,xoffset,yoffset) {
@@ -428,7 +546,8 @@ class FloorOnlyRight extends Tile {
 
 class FloorOnlyUp extends Tile {
     constructor() {
-        super("floor_only_up");
+        super("floor","floor_only_up");
+        this.rotate("up");
     }
 
     canWalkOn(object,xoffset,yoffset) {
@@ -438,7 +557,8 @@ class FloorOnlyUp extends Tile {
 
 class FloorOnlyDown extends Tile {
     constructor() {
-        super("floor_only_down");
+        super("floor","floor_only_down");
+        this.rotate("down");
     }
 
     canWalkOn(object,xoffset,yoffset) {
