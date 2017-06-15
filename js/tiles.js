@@ -4,113 +4,158 @@ function createTile(type) {
     // NOTE: The numbers used here are LEVEL-design numbers.
     //       They are not sprite-positions, and given the improved spritesheet,
     //       they hardly ever match, so please don't expect them to
+
+    // TODO: This switch-construction has served is purpose, time to invent something new with groups of categories
+    //       kind of like the roads and thick walls are created
     switch(type) {
         case 10: tile = new Space();
                  break;
         // plain floor
         case 11: tile = new Floor();
                  break;
-        // floor with direction
+        // entry and exit
+        case 20: tile = new Entry();
+                break;
+        case 21: tile = new Exit();
+                break;
+
+        // roads with direction
         case 12:
         case 13:
         case 14:
-        case 15:
+//        case 15:
         case 16:
         case 17:
-        case 23:
-        case 24:
-        case 25:
+        case 18:
+        case 19:
+//        case 22:
+//        case 23:
+//        case 24:
+//        case 25:
         case 26:
         case 27:
-            tile = new Road({12:"NS",13:"EW",14:"ESW",15:"NEW",16:"ES",17:"SW",
-                              23:"NESW",24:"NES",25:"NSW",26:"NE",27:"NW"}[type]);
-                 break;
-        // active floor - with light
         case 28:
-            tile = new FloorLight();
-            break;
+        case 29:
+            tile = new Road(
+                {12:"NS",
+                 13:"EW",
+                 14:"NESW",
 
-        // uni-directional floors
-        case 39: tile = new FloorOnlyLeft();
-            break;
-        case 49: tile = new FloorOnlyRight();
-            break;
-        case 59: tile = new FloorOnlyUp();
-            break;
-        case 69: tile = new FloorOnlyDown();
-            break;
+                 16:"NES",
+                 17:"NSW",
+                 18:"ES",
+                 19:"SW",
 
+                 26:"NEW",
+                 27:"ESW",
+                 28:"NE",
+                 29:"NW"}[type]);
+                 break;
 
-        // plain walls
-        case 31: tile = new Wall();
-            break;
-
-        case 20:
-        case 21:
-        case 22:
-        case 30:
+        // Thick walls
+//        case 30:
+        case 31:
         case 32:
-        case 40:
-        case 41:
-        case 42:
-        case 50:
-        case 51:
-        case 52:
-        case 60:
-        case 61:
-        case 62:
-            let directions = {20: "ES", 21: "EW", 22: "SW", 30: "NS", 32: "NSW", 40: "NE",
-                            41: "ESW", 42: "NW", 50: "E", 51:"W", 52:"S", 60:"NEW", 61:"NES",
-                            62:"N"};
+        case 33:
+        case 34:
+        case 35:
+        case 36:
+        case 37:
+        case 38:
+        case 39:
+
+//        case 40:
+//        case 41:
+//        case 42:
+//        case 43:
+        case 44:
+        case 45:
+        case 46:
+        case 47:
+        case 48:
+        case 49:
+            let directions = {
+                              31: "",
+                              32: "NS",
+                              33: "EW",
+                              34: "E",
+                              35: "W",
+                              36: "NES",
+                              37: "NSW",
+                              38: "ES",
+                              39: "SW",
+
+                              44: "S",
+                              45: "N",
+                              46: "NEW",
+                              47: "ESW",
+                              48: "NE",
+                              49: "NW"};
 
             tile = new Wall(directions[type]);
             break;
 
-        // entry and exit
-        case 18: tile = new Entry();
-                break;
-        case 19: tile = new Exit();
-                break;
+        // thin walls (P24)
+        // TODO: Re-wamp these walls - make the remaining types, and call them thin walls rather than P24
+        case 50: tile = new P24TopLeft();
+            break;
+        case 51: tile = new P24TopRight();
+            break;
+//        case 52:
+//        case 53:
+//        case 54:
+//        case 55:
+//        case 56:
+//        case 57:
+        case 58: tile = new P24TopLeftCorner();
+            break;
+        case 59: tile = new P24TopRightCorner();
+            break;
+//        case 60:
+//        case 61:
+//        case 62:
+//        case 63:
+        case 64:  tile = new P24Top();
+            break;
+//        case 65:
+//        case 66:
+//        case 67:
+        case 68: tile = new P24BottomLeftCorner();
+            break;
+        case 69: tile = new P24BottomRightCorner();
+            break;
 
-        // partly blocked
-        case 53: // 24 top left
-            tile = new P24TopLeftCorner();
-            break;
-        case 54:
-            tile = new P24TopRightCorner();
-            break;
-        case 55: // 24X 32Y
-            tile = new P24TopLeft();
-            break;
-        case 56:
-            tile = new P24TopRight();
-            break;
-        case 57:
-            tile = new P24Top();
-            break;
-        case 63:
-            tile = new P24BottomLeftCorner();
-            break;
-        case 64:
-            tile = new P24BottomRightCorner();
+        // Doors
+        case 70: tile = new Door("blue", "closed", "keep");
             break;
 
-        // doors - only partly walkable (requires relative x and y pos)
-        case 33: tile = new Door("blue", "closed", "keep");
-                 break;
+        case 71: tile = new Door("blue", "closed", "auto");
+            break;
 
-        case 34: tile = new Door("blue", "closed", "auto");
-                 break;
+        case 72: tile = new Door("red", "closed", "keep");
+            break;
 
-        case 43: tile = new Door("red", "closed", "keep");
-                 break;
+        case 73: tile = new Door("red", "closed", "auto");
+            break;
 
-        case 44: tile = new Door("blue", "closed", "auto");
-                 break;
+        // uni-directional floors
+        case 76: tile = new FloorOnlyRight();
+            break;
+        case 77: tile = new FloorOnlyLeft();
+            break;
+        case 78: tile = new FloorOnlyUp();
+            break;
+        case 79: tile = new FloorOnlyDown();
+            break;
+
+        // active floor - with light
+        case 80:
+            tile = new FloorLight();
+            break;
 
         default:
             console.warn("Unknown tile type: " + type);
-            tile = new Tile(type);
+            tile = new Tile("space");
     }
 
     return tile;
