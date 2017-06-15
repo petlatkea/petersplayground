@@ -134,6 +134,16 @@
             </li>
 
 
+            <li>
+                <div class="levelname">Conveyors, conveyors, conveyors</div>
+                <div class="levelinfo">Conveyorbelts that moves the player</div>
+                <div class="leveldetail">
+                    <p>I want move active tiles, that the player can interact with. The floor-lights were the first kind, and now I've got conveyor-belts that moves the player.<br>
+                    The trick was to let each belt have a ticker-method that gets called when it should move. Hope that doesn't break when going to other levels!</p>
+                    <p class="levelkeywords">Keywords: Belts, pushing the player (and others)</p>
+                </div>
+            </li>
+
 
         </ol>
 
@@ -144,7 +154,7 @@
         document.querySelectorAll(".levels li .levelname").forEach((elm, index) => {
             elm.addEventListener("click", function() {
                 console.log("click!");
-                game.level = index;
+                game.level = index+1;
                 startGame();
             });
         });

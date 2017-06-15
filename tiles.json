@@ -78,8 +78,10 @@
         "reddoor_closing": {
             "frames": [65,64,63,62,61],
             "next": "reddoor_closed"
-        }
+        },
+
+        "conveyorbelt": [73,77]
 
     },
-    "framerate": 10
+    "framerate": 20
 }

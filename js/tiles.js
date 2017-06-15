@@ -153,6 +153,21 @@ function createTile(type) {
             tile = new FloorLight();
             break;
 
+        // conveyor belts
+        case 86:
+            tile = new ConveyorBelt("right");
+            break;
+        case 87:
+            tile = new ConveyorBelt("left");
+            break;
+        case 88:
+            tile = new ConveyorBelt("up");
+            break;
+        case 89:
+            tile = new ConveyorBelt("down");
+            break;
+
+
         default:
             console.warn("Unknown tile type: " + type);
             tile = new Tile("space");
@@ -320,13 +335,32 @@ class Road extends Tile {
     }
 }
 
-class FloorLight extends Tile {
+class ActiveTile extends Tile {
+    constructor(basic, overlay) {
+        super(basic,overlay);
+
+        this.objectsOn = [];
+    }
+
+    walkOn(object,xoffset,yoffset) {
+        if( this.objectsOn.indexOf(object) == -1 ) {
+            this.objectsOn.push(object);
+        }
+    }
+
+    walkOff(object,xoffset,yoffset) {
+        this.objectsOn.splice(this.objectsOn.indexOf(object),1);
+    }
+
+    hasObjectsOn() {
+        return this.objectsOn.length > 0;
+    }
+}
+
+class FloorLight extends ActiveTile {
     constructor() {
         super("floor", "floor_light_off");
         this.turnedOn = false;
-
-        // keep track on all the objects on this tile
-        this.objectsOn = [];
 
         this.walkable = true;
     }
@@ -343,12 +377,8 @@ class FloorLight extends Tile {
 
     // Walk on - something happens!
     walkOn(object,xoffset, yoffset) {
+        super.walkOn(object,xoffset,yoffset);
         if( xoffset > 4 && xoffset < 60 && yoffset > 4 && yoffset < 60) {
-
-            if( this.objectsOn.indexOf(object) == -1 ) {
-                this.objectsOn.push(object);
-            }
-
             if(!this.turnedOn) {
                 this.turnOn();
             }
@@ -356,13 +386,60 @@ class FloorLight extends Tile {
     }
 
     walkOff(object,xoffset, yoffset) {
-        this.objectsOn.splice(this.objectsOn.indexOf(object),1);
+        super.walkOff(object,xoffset,yoffset);
         // only turn off, if all objects on the tile has gone
-        if( this.turnedOn && this.objectsOn.length == 0) {
+        if( this.turnedOn && !this.hasObjectsOn()) {
             this.turnOff();
         }
     }
 
+}
+
+class ConveyorBelt extends ActiveTile {
+    constructor( direction ) {
+        super("floor", "conveyorbelt");
+
+        // register this belt with ticker!
+        createjs.Ticker.on("tick", this.tick, this);
+        this.direction = direction;
+        this.rotate(direction);
+    }
+
+
+
+    // every belt has its' own tick handler - for moving objects on the belt
+    tick(event) {
+        // TODO: Match speed with animation somehow
+        let speed = .6;
+
+        this.objectsOn.forEach( object => {
+            // If object is on multiple conveyor-belts, it speeds up
+            // so divide the speed with the number of conveyor-belts ...
+            let count = 1;
+            object.tiles.forEach(tile => {
+                if( tile != this && tile.type == "conveyorbelt" && tile.direction == this.direction) {
+                    // if tile.type == conveyorbelt, this object is on more conveyorbelts
+                    count++;
+                }
+            })
+            switch(this.direction) {
+                case "right":
+                    object.moveWith(speed/count,0);
+                    break;
+                case "left":
+                    object.moveWith(-speed/count,0);
+                    break;
+                case "up":
+                    object.moveWith(0,-speed/count);
+                    break;
+                case "down":
+                    object.moveWith(0,speed/count);
+                    break;
+            }
+
+        })
+
+    }
 }
 
 
